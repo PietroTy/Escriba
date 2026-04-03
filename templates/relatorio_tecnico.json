@@ -1,0 +1,16 @@
+{
+  "id": "relatorio_tecnico",
+  "nome": "Relatório Técnico",
+  "descricao": "Geração de relatórios técnicos conforme ABNT NBR 10719.",
+  "norma": "ABNT NBR 10719",
+  "prioridade": 4,
+  "status": "placeholder",
+  "secoes": [
+    { "id": "capa", "numero": 0, "titulo": "Capa e Resumo", "obrigatorio": true, "prompt": "[PLACEHOLDER]" },
+    { "id": "introducao", "numero": 1, "titulo": "Introdução", "obrigatorio": true, "prompt": "[PLACEHOLDER]" },
+    { "id": "metodologia", "numero": 2, "titulo": "Metodologia", "obrigatorio": true, "prompt": "[PLACEHOLDER]" },
+    { "id": "resultados", "numero": 3, "titulo": "Resultados", "obrigatorio": true, "prompt": "[PLACEHOLDER]" },
+    { "id": "conclusao", "numero": 4, "titulo": "Conclusão", "obrigatorio": true, "prompt": "[PLACEHOLDER]" }
+  ],
+  "exportacao": { "formatos_suportados": ["pdf", "docx"], "formato_padrao": "pdf" }
+}

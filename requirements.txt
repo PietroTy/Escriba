@@ -3,3 +3,5 @@ openai
 PyPDF2
 python-docx
 reportlab
+python-dotenv
+pyyaml

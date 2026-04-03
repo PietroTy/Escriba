@@ -3,5 +3,7 @@
 **/puppeteer-core/.local-chromium/
 node_modules/
 .env
-secrets.toml
+.streamlit/secrets.toml
 start.bat
+__pycache__/
+*.pyc

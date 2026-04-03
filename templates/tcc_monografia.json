@@ -1,0 +1,18 @@
+{
+  "id": "tcc_monografia",
+  "nome": "TCC / Monografia",
+  "descricao": "Geração de trabalhos de conclusão de curso conforme ABNT NBR 14724.",
+  "norma": "ABNT NBR 14724",
+  "prioridade": 3,
+  "status": "placeholder",
+  "secoes": [
+    { "id": "capa", "numero": 0, "titulo": "Capa e Folha de Rosto", "obrigatorio": true, "prompt": "[PLACEHOLDER]" },
+    { "id": "resumo", "numero": 1, "titulo": "Resumo e Abstract", "obrigatorio": true, "prompt": "[PLACEHOLDER]" },
+    { "id": "sumario", "numero": 2, "titulo": "Sumário", "obrigatorio": true, "prompt": "[PLACEHOLDER]" },
+    { "id": "introducao", "numero": 3, "titulo": "Introdução", "obrigatorio": true, "prompt": "[PLACEHOLDER]" },
+    { "id": "capitulos", "numero": 4, "titulo": "Capítulos de Desenvolvimento", "obrigatorio": true, "prompt": "[PLACEHOLDER]" },
+    { "id": "conclusao", "numero": 5, "titulo": "Conclusão", "obrigatorio": true, "prompt": "[PLACEHOLDER]" },
+    { "id": "referencias", "numero": 6, "titulo": "Referências", "obrigatorio": true, "prompt": "[PLACEHOLDER]" }
+  ],
+  "exportacao": { "formatos_suportados": ["pdf", "tex", "docx"], "formato_padrao": "pdf" }
+}

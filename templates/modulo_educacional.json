@@ -1,0 +1,62 @@
+{
+  "id": "modulo_educacional",
+  "nome": "Módulo Educacional",
+  "descricao": "Geração de módulos educacionais estruturados com seções de introdução, unidades, glossário e referências.",
+  "norma": "Diretrizes Pedagógicas / MEC",
+  "prioridade": 1,
+  "secoes": [
+    {
+      "id": "resumo",
+      "numero": 0,
+      "titulo": "Resumo geral aprofundado",
+      "obrigatorio": false,
+      "prompt": "Seção 0. Resumo geral aprofundado\n\nFaça um resumo aprofundado do material, sintetizando os pontos principais e destacando aplicações práticas. Use APENAS informações presentes no material-fonte."
+    },
+    {
+      "id": "introducao",
+      "numero": 1,
+      "titulo": "Introdução ao conteúdo",
+      "obrigatorio": true,
+      "prompt": "Seção 1. Introdução ao conteúdo\n\nRedija um texto introdutório para um módulo educacional com pelo menos 3 parágrafos. Use APENAS informações presentes no material-fonte fornecido."
+    },
+    {
+      "id": "unidades",
+      "numero": 2,
+      "titulo": "Unidades de aprendizagem do Módulo",
+      "obrigatorio": true,
+      "prompt": "Seção 2. Unidades de aprendizagem do Módulo\n\nDesenvolva as unidades principais de aprendizagem com base no material fornecido. Cada unidade deve ter título, objetivo e conteúdo. Use APENAS informações do material-fonte."
+    },
+    {
+      "id": "glossario",
+      "numero": 3,
+      "titulo": "Glossário geral",
+      "obrigatorio": false,
+      "prompt": "Seção 3. Glossário geral\n\nCom base no texto abaixo, identifique as palavras ou termos difíceis, técnicos ou pouco usuais para o público geral. Apresente no formato: N°:\tTermo:\tDefinição / significado. Use APENAS termos presentes no material-fonte."
+    },
+    {
+      "id": "links",
+      "numero": 4,
+      "titulo": "Links de materiais complementares e anexos",
+      "obrigatorio": false,
+      "prompt": "Seção 4. Links de materiais complementares e anexos\n\nExtraia apenas os links, referências externas e anexos citados no texto fornecido. Não invente links ou recursos não mencionados."
+    },
+    {
+      "id": "conclusao",
+      "numero": 5,
+      "titulo": "Unidade de conclusão do módulo",
+      "obrigatorio": true,
+      "prompt": "Seção 5. Unidade de conclusão do módulo\n\nResuma os aprendizados principais e incentive a aplicação do conhecimento adquirido, com base exclusivamente no material apresentado."
+    },
+    {
+      "id": "referencias",
+      "numero": 6,
+      "titulo": "Referências do Módulo",
+      "obrigatorio": false,
+      "prompt": "Seção 6. Referências do Módulo\n\nExtraia e formate as referências bibliográficas presentes no conteúdo fornecido. Use apenas o que consta no material-fonte."
+    }
+  ],
+  "exportacao": {
+    "formatos_suportados": ["pdf", "docx", "txt", "tex"],
+    "formato_padrao": "pdf"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "resumo_fichamento",
+  "nome": "Resumo / Fichamento",
+  "descricao": "Geração de resumos e fichamentos conforme ABNT NBR 6028.",
+  "norma": "ABNT NBR 6028",
+  "prioridade": 5,
+  "status": "placeholder",
+  "secoes": [
+    { "id": "referencia", "numero": 0, "titulo": "Referência da Obra", "obrigatorio": true, "prompt": "[PLACEHOLDER]" },
+    { "id": "resumo", "numero": 1, "titulo": "Resumo", "obrigatorio": true, "prompt": "[PLACEHOLDER]" }
+  ],
+  "exportacao": { "formatos_suportados": ["txt", "docx"], "formato_padrao": "txt" }
+}

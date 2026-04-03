@@ -1,17 +1,526 @@
+"""
+app.py — Orquestrador Principal / Interface Streamlit
+Escriba v2.0
+
+Pipeline:
+    Upload → Ingestão → Compreensão → Geração → Polimento → Exportação
+"""
+
 import streamlit as st
+import json
 
-st.set_page_config(page_title="Escriba + Corretor", layout="wide")
+import config
+from modules.ingestor import ingest_document
+from modules.comprehension import comprehend
+from modules.generator import generate
+from modules.polisher import polish
+from modules.exporter import export
 
-st.markdown("# Escriba + Corretor")
-st.markdown("Escolha a aba para usar o gerador de módulos (Escriba) ou o corretor de texto.")
+# ──────────────────────────────────────────────────────────────────
+# Configuração da página
+# ──────────────────────────────────────────────────────────────────
+st.set_page_config(
+    page_title=config.APP_NOME,
+    page_icon="📜",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
-from Escriba import escriba_ui
-from Corretor import corretor_ui
+# ──────────────────────────────────────────────────────────────────
+# CSS Custom — Design premium escuro
+# ──────────────────────────────────────────────────────────────────
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-tab_escriba, tab_corretor = st.tabs(["Escriba", "Corretor"])
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
 
-with tab_escriba:
-    escriba_ui()
+    /* Background geral */
+    .stApp {
+        background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+        color: #e8e8f0;
+    }
 
-with tab_corretor:
-    corretor_ui()
+    /* Sidebar */
+    [data-testid="stSidebar"] {
+        background: rgba(255,255,255,0.04);
+        border-right: 1px solid rgba(255,255,255,0.08);
+    }
+
+    /* Header principal */
+    .escriba-header {
+        text-align: center;
+        padding: 2rem 0 1rem;
+    }
+    .escriba-header h1 {
+        font-size: 2.8rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0;
+    }
+    .escriba-header p {
+        color: #94a3b8;
+        font-size: 1rem;
+        margin-top: 0.4rem;
+    }
+
+    /* Cards de módulo / pipeline */
+    .pipeline-card {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        padding: 1rem 1.2rem;
+        margin-bottom: 0.6rem;
+        transition: all 0.2s ease;
+    }
+    .pipeline-card:hover {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(167,139,250,0.4);
+    }
+    .pipeline-card.active {
+        border-color: #a78bfa;
+        background: rgba(167,139,250,0.1);
+    }
+    .pipeline-card.done {
+        border-color: #34d399;
+        background: rgba(52,211,153,0.08);
+    }
+
+    /* Badges de status */
+    .badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+    .badge-placeholder { background: rgba(251,191,36,0.2); color: #fbbf24; }
+    .badge-funcional  { background: rgba(52,211,153,0.2); color: #34d399; }
+    .badge-roadmap    { background: rgba(96,165,250,0.2); color: #60a5fa; }
+
+    /* Botões */
+    .stButton > button {
+        background: linear-gradient(135deg, #7c3aed, #2563eb);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 0.5rem 1.5rem;
+        transition: all 0.2s ease;
+    }
+    .stButton > button:hover {
+        background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(124,58,237,0.4);
+    }
+
+    /* Download buttons */
+    [data-testid="stDownloadButton"] button {
+        background: rgba(52,211,153,0.15) !important;
+        color: #34d399 !important;
+        border: 1px solid rgba(52,211,153,0.4) !important;
+        border-radius: 8px;
+    }
+
+    /* Selectbox e inputs */
+    .stSelectbox > div > div,
+    .stTextInput > div > div > input,
+    .stTextArea > div > div > textarea {
+        background: rgba(255,255,255,0.06) !important;
+        border-color: rgba(255,255,255,0.12) !important;
+        color: #e8e8f0 !important;
+    }
+
+    /* Expanders */
+    .streamlit-expanderHeader {
+        background: rgba(255,255,255,0.04) !important;
+        border-radius: 8px;
+    }
+
+    /* Rodapé */
+    .escriba-footer {
+        text-align: center;
+        color: #475569;
+        font-size: 0.75rem;
+        padding: 2rem 0 1rem;
+        border-top: 1px solid rgba(255,255,255,0.06);
+        margin-top: 3rem;
+    }
+
+    /* Oculta rodapé padrão do Streamlit */
+    footer { visibility: hidden; }
+
+    /* Separador */
+    hr { border-color: rgba(255,255,255,0.08); }
+</style>
+""", unsafe_allow_html=True)
+
+# ──────────────────────────────────────────────────────────────────
+# Session State — inicialização
+# ──────────────────────────────────────────────────────────────────
+def _init_state():
+    defaults = {
+        "cache": {},
+        "ingestor_result": None,
+        "comprehension_result": None,
+        "generator_results": None,
+        "polish_results": None,
+        "export_bytes": None,
+        "export_nome": None,
+        "export_mime": None,
+        "pipeline_log": [],
+        "pipeline_rodou": False,
+    }
+    for k, v in defaults.items():
+        if k not in st.session_state:
+            st.session_state[k] = v
+
+_init_state()
+
+# ──────────────────────────────────────────────────────────────────
+# Header
+# ──────────────────────────────────────────────────────────────────
+st.markdown("""
+<div class="escriba-header">
+    <h1>📜 Escriba v2.0</h1>
+    <p>Central modular de processamento acadêmico com IA • Maritaca Sabiá</p>
+</div>
+""", unsafe_allow_html=True)
+
+# ──────────────────────────────────────────────────────────────────
+# Sidebar — Configurações
+# ──────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.markdown("### ⚙️ Configurações")
+
+    # API Key
+    api_key = config.get_api_key()
+    if not api_key:
+        api_key = st.text_input(
+            "🔑 Chave API Maritaca",
+            type="password",
+            placeholder="Cole sua chave aqui",
+            help="Configure em .streamlit/secrets.toml para não precisar inserir manualmente.",
+            key="api_key_input"
+        )
+    else:
+        st.success("✅ API Key carregada automaticamente")
+
+    st.divider()
+
+    # Seleção de Template
+    templates_disponiveis = config.listar_templates()
+    nomes_templates = {t["nome"]: t["id"] for t in templates_disponiveis}
+    template_nome_selecionado = st.selectbox(
+        "📐 Formato de Saída",
+        list(nomes_templates.keys()),
+        index=0,
+        key="template_selecionado",
+        help="O Módulo Educacional é o template principal e totalmente funcional."
+    )
+    template_id = nomes_templates[template_nome_selecionado]
+    template_atual = config.carregar_template(template_id)
+
+    # Badge de status do template
+    status_template = template_atual.get("status", "funcional")
+    badge_cor = "badge-funcional" if status_template == "funcional" else "badge-placeholder"
+    st.markdown(f'<span class="badge {badge_cor}">{status_template}</span>', unsafe_allow_html=True)
+    st.caption(template_atual.get("descricao", ""))
+
+    st.divider()
+
+    # Modelo
+    modelos_opcoes = list(config.MODELOS.keys())
+    modelo_idx = modelos_opcoes.index(config.MODELO_PADRAO_GERACAO)
+    modelo_selecionado = st.selectbox(
+        "🤖 Modelo de Geração",
+        modelos_opcoes,
+        index=modelo_idx,
+        format_func=lambda m: config.MODELOS[m]["nome_exibicao"],
+        key="modelo_selecionado",
+    )
+    info_modelo = config.MODELOS[modelo_selecionado]
+    st.caption(
+        f"📦 Contexto: {info_modelo['contexto_tokens']:,} tokens | "
+        f"💰 R$ {info_modelo['custo_output_por_milhao_brl']:.2f}/1M tokens"
+    )
+
+    st.divider()
+
+    # Idioma
+    idioma = st.selectbox("🌐 Idioma de Saída", config.IDIOMAS, key="idioma_selecionado")
+
+    st.divider()
+
+    # Formato de exportação
+    formato_export = st.selectbox(
+        "💾 Formato de Download",
+        config.FORMATOS_EXPORTACAO,
+        index=0,
+        format_func=lambda f: f.upper(),
+        key="formato_export",
+    )
+
+    st.divider()
+    st.markdown(f"""
+    <div style="font-size: 0.75rem; color: #475569; text-align: center;">
+        <strong>Escriba v2.0</strong><br>
+        Desenvolvido por {config.APP_AUTOR} • {config.APP_ANO}
+    </div>
+    """, unsafe_allow_html=True)
+
+# ──────────────────────────────────────────────────────────────────
+# Corpo Principal — Layout em colunas
+# ──────────────────────────────────────────────────────────────────
+col_esq, col_dir = st.columns([1.1, 1], gap="large")
+
+# ── COLUNA ESQUERDA: Upload + Parâmetros + Seções ──
+with col_esq:
+    st.markdown("#### 📁 Documento Fonte")
+    arquivo = st.file_uploader(
+        "Envie um arquivo (PDF, DOCX ou TXT)",
+        type=["pdf", "txt", "docx"],
+        key="arquivo_upload",
+        label_visibility="collapsed",
+    )
+    if arquivo:
+        st.success(f"📎 **{arquivo.name}** carregado")
+
+    st.divider()
+
+    st.markdown("#### 📝 Tema Geral")
+    tema = st.text_input(
+        "Descreva brevemente o tema do documento:",
+        placeholder="Ex: Introdução à Programação em Python para iniciantes",
+        key="tema_geral",
+        label_visibility="collapsed",
+    )
+
+    st.divider()
+
+    # Seleção de seções
+    st.markdown(f"#### 🗂️ Seções — *{template_nome_selecionado}*")
+    secoes_template = template_atual.get("secoes", [])
+    secoes_selecionadas = []
+
+    for secao in secoes_template:
+        obrigatorio = secao.get("obrigatorio", False)
+        selecionada = st.checkbox(
+            f"{'🔒 ' if obrigatorio else ''}Seção {secao['numero']}: {secao['titulo']}",
+            value=obrigatorio or (not obrigatorio and secao['numero'] in [1, 2, 5]),
+            key=f"sec_{secao['id']}",
+            disabled=False,
+        )
+        if selecionada:
+            secoes_selecionadas.append(secao["id"])
+
+    st.divider()
+
+    # Botão principal
+    gerar_btn = st.button(
+        "🚀 Processar Documento",
+        use_container_width=True,
+        type="primary",
+        key="btn_processar",
+        disabled=not api_key,
+    )
+    if not api_key:
+        st.warning("⚠️ Configure a API Key na barra lateral para processar.")
+
+# ── COLUNA DIREITA: Pipeline + Resultado ──
+with col_dir:
+    st.markdown("#### 🔄 Pipeline de Processamento")
+
+    # Status cards do pipeline
+    etapas = [
+        ("ingestor", "📄 Módulo 1 — Ingestão", "Funcional", "badge-funcional"),
+        ("comprehension", "🧠 Módulo 2 — Compreensão", "Placeholder (CoVe roadmap)", "badge-placeholder"),
+        ("generator", "⚙️ Módulo 3 — Geração", "Funcional", "badge-funcional"),
+        ("polisher", "✍️ Módulo 4 — Polimento", "Placeholder (sabia-4 roadmap)", "badge-placeholder"),
+        ("exporter", "📤 Módulo 5 — Exportação", "Funcional", "badge-funcional"),
+    ]
+
+    for etapa_id, etapa_nome, etapa_status, badge_class in etapas:
+        estado = ""
+        if st.session_state.get("pipeline_rodou"):
+            estado = "done"
+        st.markdown(f"""
+        <div class="pipeline-card {estado}">
+            <strong>{etapa_nome}</strong>
+            <span class="badge {badge_class}" style="float:right">{etapa_status}</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Log do pipeline
+    if st.session_state["pipeline_log"]:
+        with st.expander("📋 Log de Execução", expanded=True):
+            for linha in st.session_state["pipeline_log"]:
+                st.markdown(f"- {linha}")
+
+# ──────────────────────────────────────────────────────────────────
+# Execução do Pipeline
+# ──────────────────────────────────────────────────────────────────
+if gerar_btn:
+    if not tema and not arquivo:
+        st.error("❌ Informe o tema geral ou envie um arquivo para processar.")
+        st.stop()
+    if not secoes_selecionadas:
+        st.error("❌ Selecione ao menos uma seção para gerar.")
+        st.stop()
+
+    log = []
+    st.session_state["pipeline_log"] = log
+    st.session_state["pipeline_rodou"] = False
+
+    # Barra de progresso central
+    st.markdown("---")
+    st.markdown("#### ⏳ Processando...")
+    progress_bar = st.progress(0, text="Iniciando pipeline...")
+    status_area = st.empty()
+
+    def log_status(msg: str):
+        log.append(msg)
+        status_area.info(msg)
+
+    try:
+        # ─── Módulo 1: Ingestão ───────────────────────────
+        progress_bar.progress(5, text="Módulo 1: Ingestão...")
+        if arquivo:
+            file_bytes = arquivo.read()
+            ingestor_result = ingest_document(file_bytes, arquivo.name, status_callback=log_status)
+            texto_fonte = ingestor_result.texto
+            cache_key = f"{ingestor_result.hash_conteudo}__{tema}__{modelo_selecionado}__{idioma}__{'-'.join(sorted(secoes_selecionadas))}"
+        else:
+            texto_fonte = ""
+            cache_key = f"no_file__{tema}__{modelo_selecionado}__{idioma}"
+            log_status("📝 Sem arquivo — usando apenas o tema informado.")
+
+        st.session_state["ingestor_result"] = ingestor_result if arquivo else None
+        progress_bar.progress(20, text="Módulo 1 concluído ✅")
+
+        # Cache check
+        if cache_key in st.session_state["cache"]:
+            log_status("⚡ Conteúdo idêntico encontrado no cache! Reutilizando resultado anterior.")
+            polish_results = st.session_state["cache"][cache_key]
+            progress_bar.progress(90, text="Cache carregado ✅")
+        else:
+            # ─── Módulo 2: Compreensão ──────────────────────────
+            progress_bar.progress(25, text="Módulo 2: Compreensão...")
+            comp_result = comprehend(texto_fonte, status_callback=log_status)
+            st.session_state["comprehension_result"] = comp_result
+            progress_bar.progress(40, text="Módulo 2 concluído ✅")
+
+            # ─── Módulo 3: Geração ──────────────────────────────
+            progress_bar.progress(45, text="Módulo 3: Geração com IA...")
+            total_secoes = len(secoes_selecionadas)
+
+            def gen_progress(frac):
+                val = int(45 + frac * 30)
+                progress_bar.progress(val, text=f"Gerando seções... {int(frac * 100)}%")
+
+            generator_results = generate(
+                texto_fonte=texto_fonte,
+                template=template_atual,
+                secoes_selecionadas=secoes_selecionadas,
+                tema=tema,
+                idioma=idioma,
+                api_key=api_key,
+                modelo_geracao=modelo_selecionado,
+                status_callback=log_status,
+                progress_callback=gen_progress,
+            )
+            st.session_state["generator_results"] = generator_results
+            progress_bar.progress(75, text="Módulo 3 concluído ✅")
+
+            # ─── Módulo 4: Polimento ────────────────────────────
+            progress_bar.progress(78, text="Módulo 4: Polimento e auditoria...")
+            polish_results = polish(
+                secoes_geradas=generator_results,
+                texto_fonte=texto_fonte,
+                api_key=api_key,
+                status_callback=log_status,
+            )
+            st.session_state["polish_results"] = polish_results
+            st.session_state["cache"][cache_key] = polish_results
+            progress_bar.progress(88, text="Módulo 4 concluído ✅")
+
+        # ─── Módulo 5: Exportação ───────────────────────────
+        progress_bar.progress(90, text="Módulo 5: Exportação...")
+        export_bytes, export_nome, export_mime = export(
+            polish_results=polish_results,
+            formato=formato_export,
+            tema=tema or "Documento Gerado",
+            idioma=idioma,
+            status_callback=log_status,
+        )
+        st.session_state["export_bytes"] = export_bytes
+        st.session_state["export_nome"] = export_nome
+        st.session_state["export_mime"] = export_mime
+        progress_bar.progress(100, text="✅ Pipeline concluído!")
+        st.session_state["pipeline_rodou"] = True
+
+    except Exception as e:
+        progress_bar.progress(0, text="❌ Erro no pipeline")
+        st.error(f"**Erro durante o processamento:** {e}")
+        log_status(f"❌ ERRO: {e}")
+
+# ──────────────────────────────────────────────────────────────────
+# Resultado — Preview e Downloads
+# ──────────────────────────────────────────────────────────────────
+if st.session_state.get("export_bytes") and st.session_state.get("pipeline_rodou"):
+    st.markdown("---")
+    st.markdown("### ✅ Resultado Gerado")
+
+    polish_results = st.session_state.get("polish_results", [])
+
+    # Preview das seções
+    tabs_secoes = [r.secao_titulo for r in polish_results if hasattr(r, 'secao_titulo')]
+    if not tabs_secoes:
+        tabs_secoes = [f"Seção {i+1}" for i in range(len(polish_results))]
+
+    if polish_results:
+        tabs = st.tabs(tabs_secoes)
+        for tab, resultado in zip(tabs, polish_results):
+            with tab:
+                st.markdown(resultado.texto_polido)
+                if resultado.relatorio and "[PLACEHOLDER]" not in resultado.relatorio:
+                    with st.expander("📊 Relatório de Auditoria"):
+                        st.info(resultado.relatorio)
+
+    st.divider()
+
+    # Downloads
+    st.markdown("#### 💾 Download")
+    col_d1, col_d2, col_d3, col_d4 = st.columns(4)
+
+    export_bytes_pdf, nome_pdf, mime_pdf = export(polish_results, "pdf", tema or "Documento", idioma)
+    export_bytes_txt, nome_txt, mime_txt = export(polish_results, "txt", tema or "Documento", idioma)
+    export_bytes_docx, nome_docx, mime_docx = export(polish_results, "docx", tema or "Documento", idioma)
+    export_bytes_tex, nome_tex, mime_tex = export(polish_results, "tex", tema or "Documento", idioma)
+
+    with col_d1:
+        st.download_button("📄 PDF", export_bytes_pdf, nome_pdf, mime_pdf, use_container_width=True, key="dl_pdf")
+    with col_d2:
+        st.download_button("📝 TXT", export_bytes_txt, nome_txt, mime_txt, use_container_width=True, key="dl_txt")
+    with col_d3:
+        st.download_button("📃 DOCX", export_bytes_docx, nome_docx, mime_docx, use_container_width=True, key="dl_docx")
+    with col_d4:
+        st.download_button("🔬 LaTeX", export_bytes_tex, nome_tex, mime_tex, use_container_width=True, key="dl_tex")
+
+# ──────────────────────────────────────────────────────────────────
+# Rodapé
+# ──────────────────────────────────────────────────────────────────
+st.markdown(f"""
+<div class="escriba-footer">
+    📜 <strong>Escriba v2.0</strong> — Central modular de processamento acadêmico com IA<br>
+    Desenvolvido por <strong>{config.APP_AUTOR}</strong> • {config.APP_ANO} •
+    Powered by <strong>Maritaca Sabiá</strong>
+</div>
+""", unsafe_allow_html=True)

@@ -1,0 +1,15 @@
+{
+  "id": "resenha_critica",
+  "nome": "Resenha Crítica",
+  "descricao": "Geração de resenhas críticas conforme convenção acadêmica.",
+  "norma": "Convenção acadêmica",
+  "prioridade": 6,
+  "status": "placeholder",
+  "secoes": [
+    { "id": "referencia", "numero": 0, "titulo": "Referência da Obra", "obrigatorio": true, "prompt": "[PLACEHOLDER]" },
+    { "id": "sintese", "numero": 1, "titulo": "Síntese", "obrigatorio": true, "prompt": "[PLACEHOLDER]" },
+    { "id": "critica", "numero": 2, "titulo": "Crítica", "obrigatorio": true, "prompt": "[PLACEHOLDER]" },
+    { "id": "conclusao", "numero": 3, "titulo": "Conclusão", "obrigatorio": true, "prompt": "[PLACEHOLDER]" }
+  ],
+  "exportacao": { "formatos_suportados": ["txt", "docx", "pdf"], "formato_padrao": "pdf" }
+}
