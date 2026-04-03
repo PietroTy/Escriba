@@ -36,12 +36,12 @@ class GeneratorResult:
         self.cove_ativo = cove_ativo
 
 
-def _build_system_prompt(texto_fonte: str, idioma: str, tema: str) -> str:
+def _build_system_prompt(texto_fonte: str, idioma: str, tema: str, incluir_markers: bool = False) -> str:
     """
     System prompt com instrução de fidelidade máxima ao material-fonte.
     Baseado na estratégia Anti-Alucinação do Blueprint Escriba v2.0.
     """
-    return (
+    prompt = (
         "Você é o Escriba — um assistente especialista em design educacional e criação de conteúdo acadêmico formal. "
         "Sua filosofia é a de um escriba medieval: se a informação não está no manuscrito original (material-fonte), ela não existe no mundo. "
         "NUNCA invente, suponha ou adicione conhecimento externo ao que foi fornecido pelo usuário.\n\n"
@@ -51,9 +51,16 @@ def _build_system_prompt(texto_fonte: str, idioma: str, tema: str) -> str:
         "---\n"
         f"{texto_fonte[:12000]}\n"  # Limita para não estourar tokens
         "---\n\n"
-        "Ao final de cada seção gerada, inclua uma nota de rodapé discreta no formato: "
-        "[Ref: baseado no material-fonte fornecido]"
     )
+
+    if incluir_markers:
+        prompt += (
+            "DIRETRIZ DE DESIGN INSTRUCIONAL: Sugira pontos de interatividade usando marcadores como [ VÍDEO ], [ ÁUDIO ], [ FIGURA ] ou [ TABELA ] "
+            "quando o conteúdo for complexo ou exigir demonstração visual. Coloque-os no meio do texto onde forem relevantes.\n\n"
+        )
+
+    prompt += "Ao final de cada seção gerada, inclua uma nota de rodapé discreta no formato: [Ref: baseado no material-fonte fornecido]"
+    return prompt
 
 
 def _chamar_api(client, modelo: str, system_prompt: str, user_prompt: str) -> str:
@@ -81,6 +88,7 @@ def generate(
     idioma: str,
     api_key: str,
     modelo_geracao: str = "sabiazinho-4",
+    incluir_markers: bool = False,
     status_callback: Optional[Callable] = None,
     progress_callback: Optional[Callable] = None,
 ) -> list[GeneratorResult]:
@@ -95,6 +103,7 @@ def generate(
         idioma: Idioma de saída (ex: "Português").
         api_key: Chave da API Maritaca.
         modelo_geracao: Modelo base para geração (padrão: sabiazinho-4).
+        incluir_markers: Se deve incluir marcadores de mídia no prompt.
         status_callback: Função para mensagens de status na UI.
         progress_callback: Função para atualizar progresso (recebe 0.0–1.0).
 
@@ -105,7 +114,7 @@ def generate(
         raise ImportError("openai não instalado. Execute: pip install openai")
 
     client = openai.OpenAI(api_key=api_key, base_url="https://chat.maritaca.ai/api")
-    system_prompt = _build_system_prompt(texto_fonte, idioma, tema)
+    system_prompt = _build_system_prompt(texto_fonte, idioma, tema, incluir_markers=incluir_markers)
     secoes_template = {s["id"]: s for s in template.get("secoes", [])}
     resultados = []
     total = len(secoes_selecionadas)

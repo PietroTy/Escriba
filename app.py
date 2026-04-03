@@ -269,6 +269,16 @@ with st.sidebar:
     )
 
     st.divider()
+
+    # Marcadores de Mídia (Modular)
+    incluir_markers = st.checkbox(
+        "🎬 Sugestões de Mídia",
+        value=True,
+        help="Inclui marcadores [VÍDEO], [ÁUDIO], [FIGURA] no texto gerado para design instrucional.",
+        key="incluir_markers"
+    )
+
+    st.divider()
     st.markdown(f"""
     <div style="font-size: 0.75rem; color: #475569; text-align: center;">
         <strong>Escriba v2.0</strong><br>
@@ -396,10 +406,10 @@ if gerar_btn:
             file_bytes = arquivo.read()
             ingestor_result = ingest_document(file_bytes, arquivo.name, status_callback=log_status)
             texto_fonte = ingestor_result.texto
-            cache_key = f"{ingestor_result.hash_conteudo}__{tema}__{modelo_selecionado}__{idioma}__{'-'.join(sorted(secoes_selecionadas))}"
+            cache_key = f"{ingestor_result.hash_conteudo}__{tema}__{modelo_selecionado}__{idioma}__{'-'.join(sorted(secoes_selecionadas))}__{incluir_markers}"
         else:
             texto_fonte = ""
-            cache_key = f"no_file__{tema}__{modelo_selecionado}__{idioma}"
+            cache_key = f"no_file__{tema}__{modelo_selecionado}__{idioma}__{incluir_markers}"
             log_status("📝 Sem arquivo — usando apenas o tema informado.")
 
         st.session_state["ingestor_result"] = ingestor_result if arquivo else None
@@ -433,6 +443,7 @@ if gerar_btn:
                 idioma=idioma,
                 api_key=api_key,
                 modelo_geracao=modelo_selecionado,
+                incluir_markers=incluir_markers,
                 status_callback=log_status,
                 progress_callback=gen_progress,
             )
