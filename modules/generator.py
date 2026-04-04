@@ -89,6 +89,7 @@ def generate(
     api_key: str,
     modelo_geracao: str = "sabiazinho-4",
     incluir_markers: bool = False,
+    contexto_anterior: Optional[str] = None,
     status_callback: Optional[Callable] = None,
     progress_callback: Optional[Callable] = None,
 ) -> list[GeneratorResult]:
@@ -104,6 +105,7 @@ def generate(
         api_key: Chave da API Maritaca.
         modelo_geracao: Modelo base para geração (padrão: sabiazinho-4).
         incluir_markers: Se deve incluir marcadores de mídia no prompt.
+        contexto_anterior: Texto já gerado em sessões/seções prévias para coerência.
         status_callback: Função para mensagens de status na UI.
         progress_callback: Função para atualizar progresso (recebe 0.0–1.0).
 
@@ -114,7 +116,14 @@ def generate(
         raise ImportError("openai não instalado. Execute: pip install openai")
 
     client = openai.OpenAI(api_key=api_key, base_url="https://chat.maritaca.ai/api")
-    system_prompt = _build_system_prompt(texto_fonte, idioma, tema, incluir_markers=incluir_markers)
+    
+    # Verifica se o template possui um system prompt customizado
+    custom_system_prompt = template.get("system_prompt")
+    if custom_system_prompt:
+        system_prompt = custom_system_prompt
+    else:
+        system_prompt = _build_system_prompt(texto_fonte, idioma, tema, incluir_markers=incluir_markers)
+    
     secoes_template = {s["id"]: s for s in template.get("secoes", [])}
     resultados = []
     total = len(secoes_selecionadas)
@@ -127,9 +136,22 @@ def generate(
         if status_callback:
             status_callback(f"⚙️ Gerando: {secao['titulo']} ({i+1}/{total})...")
 
-        # [ROADMAP CoVe] — Por ora, geração em passo único (Draft)
-        # Fase 1: Draft
+        # Constrói o user prompt
         user_prompt = secao["prompt"]
+        
+        # Injeção de contexto de continuidade (Memória de Sessão)
+        if contexto_anterior:
+            user_prompt = (
+                "CONTEXTO DE CONTINUIDADE (Acompanhe o fluxo do que já foi escrito):\n"
+                f"{contexto_anterior}\n"
+                "--- FIM DO CONTEXTO DE CONTINUIDADE ---\n\n"
+                f"{user_prompt}"
+            )
+        
+        # Se for um template customizado, injetamos o material-fonte no user_prompt
+        if custom_system_prompt:
+            user_prompt += f"\n\nMATERIAL DE ORIGEM (TEXTO_FONTE):\n\"\"\"\n{texto_fonte[:15000]}\n\"\"\""
+
         if "[PLACEHOLDER]" in user_prompt:
             texto_gerado = (
                 f"[PLACEHOLDER] Geração da seção '{secao['titulo']}' ainda não implementada para este template. "

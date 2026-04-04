@@ -1,55 +1,85 @@
-"""
-modules/polisher.py — Módulo 4: Polimento e Double-Check Reativo
-Escriba v2.0
-
-ESTADO ATUAL: Placeholder estruturado com auditoria simulada.
-ROADMAP: Implementar Double-Check Reativo real usando sabia-4:
-         - Confrontar "Texto Gerado" vs "Texto Fonte"
-         - Marcar trechos sem base documental
-         - Rejeitar parágrafos com alucinação detectada e reenviar ao Generator
-
-Responsabilidades:
-- Revisar texto gerado para conformidade com material-fonte
-- Verificar coesão gramatical e ortográfica
-- Retornar texto polido com relatório de auditoria
-"""
-
+import json
 from typing import Optional, Callable
+
+try:
+    import openai
+    _HAS_OPENAI = True
+except ImportError:
+    _HAS_OPENAI = False
 
 
 class PolishResult:
-    """Resultado do polimento de uma seção."""
+    """Resultado do polimento e auditoria de uma seção."""
     def __init__(
         self,
         secao_id: str,
+        secao_titulo: str,
         texto_original: str,
         texto_polido: str,
-        alucinacoes_detectadas: int,
         aprovada: bool,
+        fidelidade: dict,
+        omissao: dict,
+        voz: dict,
         relatorio: str,
     ):
         self.secao_id = secao_id
+        self.secao_titulo = secao_titulo
         self.texto_original = texto_original
         self.texto_polido = texto_polido
-        self.alucinacoes_detectadas = alucinacoes_detectadas
         self.aprovada = aprovada
+        self.fidelidade = fidelidade
+        self.omissao = omissao
+        self.voz = voz
         self.relatorio = relatorio
 
 
-def _double_check(client, texto_gerado: str, texto_fonte: str, modelo_auditoria: str) -> tuple[bool, str]:
+def _double_check(client, texto_gerado: str, texto_fonte: str, modelo_auditoria: str) -> dict:
     """
-    [ROADMAP] Double-Check Reativo real.
-    Pergunta ao sabia-4 se o texto gerado contém informações
-    que NÃO constam no texto-fonte.
+    Realiza a auditoria de alucinação (Double-Check) confrontando o gerado com a fonte.
+    Utiliza o modelo de auditoria de forma 'Pessimista' e exige retorno em JSON.
+    """
+    system_prompt = (
+        "Você é o Auditor Científico 'Pessimista' do sistema Escriba. Sua única missão é garantir a integridade absoluta da tese de doutorado.\n\n"
+        "REGRAS DE OURO:\n"
+        "1. NA DÚVIDA, ALERTE: Se uma afirmação no [TEXTO_GERADO] não puder ser rastreada diretamente ao [TEXTO_FONTE], marque como alucinação.\n"
+        "2. RIGOR DOCUMENTAL: Nomes, datas, locais e números devem ser conferidos com precisão cirúrgica.\n"
+        "3. VERBATIM: Verifique se as falas de professores mantêm as aspas e o texto original.\n\n"
+        "OUTPUT OBRIGATÓRIO (JSON estrito):\n"
+        "{\n"
+        "  \"aprovada\": boolean,\n"
+        "  \"fidelidade\": {\"status\": \"OK/ALERTA\", \"detalhes\": \"...\"},\n"
+        "  \"omissao\": {\"status\": \"OK/ALERTA\", \"detalhes\": \"...\"},\n"
+        "  \"voz\": {\"status\": \"OK/ALERTA\", \"detalhes\": \"...\"},\n"
+        "  \"relatorio\": \"Resumo executivo do veredito\"\n"
+        "}"
+    )
 
-    Retorna: (aprovado: bool, relatorio: str)
-    """
-    # [PLACEHOLDER] — Lógica real seria:
-    # prompt = f"Texto gerado:\n{texto_gerado}\n\nTexto fonte:\n{texto_fonte[:6000]}\n\n
-    #            Existe alguma informação no Texto Gerado que NÃO consta no Texto Fonte?
-    #            Responda APENAS com 'APROVADO' ou 'REPROVADO: <motivo>'."
-    # response = client.chat.completions.create(...)
-    return True, "[PLACEHOLDER] Double-Check será realizado pelo sabia-4 quando implementado."
+    user_prompt = (
+        f"[TEXTO_FONTE]:\n\"\"\"\n{texto_fonte[:12000]}\n\"\"\"\n\n"
+        f"[TEXTO_GERADO]:\n\"\"\"\n{texto_gerado}\n\"\"\"\n\n"
+        "Realize a auditoria técnica agora."
+    )
+
+    try:
+        response = client.chat.completions.create(
+            model=modelo_auditoria,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0.1,  # Rigor máximo
+            response_format={"type": "json_object"}
+        )
+        content = response.choices[0].message.content
+        return json.loads(content)
+    except Exception as e:
+        return {
+            "aprovada": False,
+            "fidelidade": {"status": "ERRO", "detalhes": f"Falha na auditoria: {str(e)}"},
+            "omissao": {"status": "ERRO", "detalhes": "Processo interrompido"},
+            "voz": {"status": "ERRO", "detalhes": "Processo interrompido"},
+            "relatorio": "Falha crítica na API de Auditoria."
+        }
 
 
 def polish(
@@ -62,44 +92,44 @@ def polish(
 ) -> list[PolishResult]:
     """
     Ponto de entrada principal do Polisher.
-
-    Args:
-        secoes_geradas: Lista de GeneratorResult do Generator.
-        texto_fonte: Texto original extraído pelo Ingestor.
-        api_key: Chave da API Maritaca (para auditoria com sabia-4).
-        modelo_auditoria: Modelo de auditoria (padrão: sabia-4).
-        status_callback: Função para mensagens de status na UI.
-        progress_callback: Função para atualizar progresso (0.0–1.0).
-
-    Returns:
-        Lista de PolishResult com texto polido e relatório.
     """
+    if not _HAS_OPENAI or not api_key:
+        # Fallback se não houver API key ou biblioteca
+        return [PolishResult(
+            secao_id=s.secao_id,
+            secao_titulo=s.secao_titulo,
+            texto_original=s.texto,
+            texto_polido=s.texto,
+            aprovada=True,
+            fidelidade={"status": "OFFLINE", "detalhes": "Auditoria não realizada (falta API key)"},
+            omissao={"status": "OFFLINE", "detalhes": "N/A"},
+            voz={"status": "OFFLINE", "detalhes": "N/A"},
+            relatorio="Modo offline: Auditoria ignorada."
+        ) for s in secoes_geradas]
+
+    client = openai.OpenAI(api_key=api_key, base_url="https://chat.maritaca.ai/api")
     resultados = []
     total = len(secoes_geradas)
 
     for i, secao in enumerate(secoes_geradas):
         if status_callback:
-            status_callback(f"✍️ Polindo e auditando: {secao.secao_titulo} ({i+1}/{total})...")
+            status_callback(f"🔬 Auditando integridade: {secao.secao_titulo}...")
 
-        # [PLACEHOLDER] Double-Check
-        aprovada, relatorio_auditoria = _double_check(None, secao.texto, texto_fonte, modelo_auditoria)
-
-        # [PLACEHOLDER] Polimento de texto — futuramente revisão gramatical via sabia-4
-        texto_polido = secao.texto  # Sem modificação por ora
+        audit_report = _double_check(client, secao.texto, texto_fonte, modelo_auditoria)
 
         resultados.append(PolishResult(
             secao_id=secao.secao_id,
+            secao_titulo=secao.secao_titulo,
             texto_original=secao.texto,
-            texto_polido=texto_polido,
-            alucinacoes_detectadas=0,  # ROADMAP: incrementar com detecções reais
-            aprovada=aprovada,
-            relatorio=relatorio_auditoria,
+            texto_polido=secao.texto,  # Implementação de re-escrita gramatical futura
+            aprovada=audit_report.get("aprovada", False),
+            fidelidade=audit_report.get("fidelidade", {}),
+            omissao=audit_report.get("omissao", {}),
+            voz=audit_report.get("voz", {}),
+            relatorio=audit_report.get("relatorio", "Sem relatório disponível.")
         ))
 
         if progress_callback:
             progress_callback((i + 1) / total)
-
-    if status_callback:
-        status_callback(f"✅ Polimento concluído. {sum(1 for r in resultados if r.aprovada)}/{total} seções aprovadas.")
 
     return resultados

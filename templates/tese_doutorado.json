@@ -1,0 +1,218 @@
+{
+  "id": "tese_doutorado",
+  "nome": "Tese de Doutorado (Pacto EJA)",
+  "descricao": "Template robusto para Doutorado com arquitetura modular de prompts (Sistema/Usuário).",
+  "requisitos": "Escriba precisa de: Rascunhos, trajetórias pessoais e referencial bibliográfico. Focado na Introdução (20 páginas) em chunks.",
+  "norma": "ABNT NBR 14724",
+  "prioridade": 0,
+  "system_prompt": "Você é o Escriba, um sistema especialista de nível de Doutorado. Sua função é redigir prosa acadêmica densa, coesa e rigorosamente pautada no material-fonte e no contexto anterior.\n\nREGRAS DE OPERAÇÃO:\n1. ZERO ALUCINAÇÃO: Proibido usar conhecimento externo. Use apenas o que estiver em [TEXTO_FONTE].\n2. FALTA DE DADOS: Se faltar informação, insira [ALERTA ESCRIBA: Dados sobre X ausentes].\n3. TOM DE VOZ: Acadêmico, impessoal (3ª pessoa do singular ou 1ª do plural).\n4. DENSIDADE: Não resuma. Expanda os conceitos, explore as implicações teóricas e legais, e garanta parágrafos longos e bem fundamentados.\n5. CITAÇÕES BIBLIOGRÁFICAS: Padrão (AUTOR, Ano).\n6. CITAÇÕES DIRETAS (SUJEITOS): Mantenha as falas e transcrições dos sujeitos de pesquisa exatamente como estão escritas no material original, sem corrigir sintaxe ou \"limpar\" a linguagem coloquial, preservando a identidade do relato.",
+  "secoes": [
+    {
+      "id": "apresentacao",
+      "numero": 1.1,
+      "titulo": "1.1 Apresentação do Tema",
+      "obrigatorio": true,
+      "prompt": "CONTEXTO DA TESE:\n- Título: O Pacto Nacional da Educação de Jovens e Adultos (EJA): reflexões sobre as práticas curriculares de professores em meio ambiente nas escolas municipais de Goiás.\n- Capítulo Atual: INTRODUÇÃO\n- Subseção a ser redigida agora: 1.1 Apresentação do Tema\n\nDIRETRIZES ESPECÍFICAS PARA ESTA SUBSEÇÃO:\nContextualize brevemente a EJA, o Pacto Nacional e a questão ambiental em Goiás com base nos dados fornecidos. Apresente o problema de pesquisa e os objetivos gerais da tese de forma clara e direta.\n\nTAREFA:\nCom base EXCLUSIVAMENTE no material-fonte, redija a subseção 1.1. Expanda os tópicos fornecidos em parágrafos densos e acadêmicos. Não use introduções genéricas. Retorne apenas o conteúdo finalizado."
+    },
+    {
+      "id": "trajetoria",
+      "numero": 1.2,
+      "titulo": "1.2 Trajetória do Pesquisador",
+      "obrigatorio": true,
+      "prompt": "CONTEXTO DA TESE:\n- Título: O Pacto Nacional da Educação de Jovens e Adultos (EJA): reflexões sobre as práticas curriculares de professores em meio ambiente nas escolas municipais de Goiás.\n- Capítulo Atual: INTRODUÇÃO\n- Subseção a ser redigida agora: 1.2 Trajetória do Pesquisador e Implicação com o Objeto de Estudo\n\nDIRETRIZES ESPECÍFICAS PARA ESTA SUBSEÇÃO:\nEsta seção permite o uso da primeira pessoa do singular. Transforme os relatos pessoais fornecidos em uma narrativa reflexiva. O foco não é uma autobiografia aleatória, mas mostrar como a vivência do autor o levou a investigar a EJA e a educação ambiental. Mantenha o rigor reflexivo.\n\nTAREFA:\nCom base EXCLUSIVAMENTE no material-fonte, redija a subseção 1.2. Retorne apenas o conteúdo acadêmico finalizado."
+    },
+    {
+      "id": "revisao_biblio",
+      "numero": 1.3,
+      "titulo": "1.3 Revisão Bibliográfica Inicial",
+      "obrigatorio": true,
+      "prompt": "CONTEXTO DA TESE:\n- Título: O Pacto Nacional da Educação de Jovens e Adultos (EJA): reflexões sobre as práticas curriculares de professores em meio ambiente nas escolas municipais de Goiás.\n- Capítulo Atual: INTRODUÇÃO\n- Subseção a ser redigida agora: 1.3 Revisão Bibliográfica Inicial\n\nDIRETRIZES ESPECÍFICAS PARA ESTA SUBSEÇÃO:\nSintetize as principais obras e autores fornecidos no texto fonte. Agrupe os autores por afinidade temática (ex: autores que falam de currículo, autores que falam de meio ambiente). Mostre como a presente pesquisa preenche uma lacuna na literatura existente.\n\nTAREFA:\nCom base EXCLUSIVAMENTE no material-fonte, redija a subseção 1.3. Retorne apenas o conteúdo acadêmico finalizado."
+    },
+    {
+      "id": "estrutura",
+      "numero": 1.4,
+      "titulo": "1.4 Estrutura da Tese",
+      "obrigatorio": true,
+      "prompt": "CONTEXTO DA TESE:\n- Título: O Pacto Nacional da Educação de Jovens e Adultos (EJA): reflexões sobre as práticas curriculares de professores em meio ambiente nas escolas municipais de Goiás.\n- Capítulo Atual: INTRODUÇÃO\n- Subseção a ser redigida agora: 1.4 Estrutura da Tese\n\nDIRETRIZES ESPECÍFICAS PARA ESTA SUBSEÇÃO:\nEscreva um texto fluido que descreva o que o leitor encontrará em cada um dos 5 capítulos subsequentes. Não use tópicos ou bullet points; redija em formato de prosa (ex: \"No Capítulo 1, discute-se... Já no Capítulo 2, aborda-se...\").\n\nTAREFA:\nCom base EXCLUSIVAMENTE no material-fonte, redija a subseção 1.4. Retorne apenas o conteúdo acadêmico finalizado."
+    },
+    {
+      "id": "cap1_1_fundamentos",
+      "numero": 1.1,
+      "titulo": "CAP 1.1 — A educação e o currículo: aspectos introdutórios",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO DA TESE:\n- Título: O Pacto Nacional da Educação de Jovens e Adultos (EJA): reflexões sobre as práticas curriculares de professores em meio ambiente nas escolas municipais de Goiás.\n- Capítulo Atual: CAPÍTULO 1. REFLEXÕES SOBRE EDUCAÇÃO, CURRÍCULO E PRÁTICAS CURRICULARES DOS PROFESSORES DA EDUCAÇÃO DE JOVENS E ADULTOS\n- Subseção a ser redigida agora: 1.1 A educação e o currículo: aspectos introdutórios\n\nDIRETRIZES ESPECÍFICAS PARA ESTA SUBSEÇÃO:\nDiscorra sobre os aspectos teóricos fundamentais da educação e do currículo. Utilize os autores fornecidos no material-base para debater o que constitui o currículo escolar, afastando-se do senso comum. Aprofunde a discussão teórica de forma densa. Empregue estritamente a terceira pessoa do singular ou primeira do plural (impessoal).\n\nTAREFA:\nCom base EXCLUSIVAMENTE no material-fonte, redija a subseção 1.1. Redija o texto com máxima profundidade analítica. Desdobre cada conceito mencionado no texto-fonte em parágrafos completos, explorando suas implicações teóricas. Proibido realizar sínteses ou resumos curtos."
+    },
+    {
+      "id": "cap1_2_conflito",
+      "numero": 1.2,
+      "titulo": "CAP 1.2 — A alfabetização na EJA: currículo em disputa",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO DA TESE:\n- Título: O Pacto Nacional da Educação de Jovens e Adultos (EJA): reflexões sobre as práticas curriculares de professores em meio ambiente nas escolas municipais de Goiás.\n- Capítulo Atual: CAPÍTULO 1. REFLEXÕES SOBRE EDUCAÇÃO, CURRÍCULO E PRÁTICAS CURRICULARES DOS PROFESSORES DA EDUCAÇÃO DE JOVENS E ADULTOS\n- Subseção a ser redigida agora: 1.2 A alfabetização de educação de Jovens e Adultos: currículo em disputa\n\nDIRETRIZES ESPECÍFICAS PARA ESTA SUBSEÇÃO:\nAnalise o processo de alfabetização especificamente no contexto da EJA. Baseando-se nos textos-fonte, exponha as tensões, disputas ideológicas e políticas que moldam o currículo para jovens e adultos. Construa uma argumentação crítica que demonstre por que o currículo da EJA não é neutro, detalhando cada argumento de forma exaustiva.\n\nTAREFA:\nCom base EXCLUSIVAMENTE no material-fonte, redija a subseção 1.2. Redija o texto com máxima profundidade analítica. Desdobre cada conceito mencionado no texto-fonte em parágrafos completos, explorando suas implicações teóricas. Proibido realizar sínteses ou resumos curtos."
+    },
+    {
+      "id": "cap1_3_pratica",
+      "numero": 1.3,
+      "titulo": "CAP 1.3 — Práticas curriculares dos professores da EJA",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO DA TESE:\n- Título: O Pacto Nacional da Educação de Jovens e Adultos (EJA): reflexões sobre as práticas curriculares de professores em meio ambiente nas escolas municipais de Goiás.\n- Capítulo Atual: CAPÍTULO 1. REFLEXÕES SOBRE EDUCAÇÃO, CURRÍCULO E PRÁTICAS CURRICULARES DOS PROFESSORES DA EDUCAÇÃO DE JOVENS E ADULTOS\n- Subseção a ser redigida agora: 1.3 Práticas curriculares dos professores da EJA\n\nDIRETRIZES ESPECÍFICAS PARA ESTA SUBSEÇÃO:\nFoque na materialização do currículo na sala de aula. Descreva e analise como os professores da EJA traduzem as diretrizes curriculares em práticas pedagógicas reais, utilizando estritamente os relatos e referências do material fornecido. Expanda a análise sobre as metodologias e abordagens empregadas pelos docentes.\n\nTAREFA:\nCom base EXCLUSIVAMENTE no material-fonte, redija a subseção 1.3. Redija o texto com máxima profundidade analítica. Desdobre cada conceito mencionado no texto-fonte em parágrafos completos, explorando suas implicações teóricas. Proibido realizar sínteses ou resumos curtos."
+    },
+    {
+      "id": "cap1_4_resistencia",
+      "numero": 1.4,
+      "titulo": "CAP 1.4 — Desafios da EJA e os movimentos de resistência",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO DA TESE:\n- Título: O Pacto Nacional da Educação de Jovens e Adultos (EJA): reflexões sobre as práticas curriculares de professores em meio ambiente nas escolas municipais de Goiás.\n- Capítulo Atual: CAPÍTULO 1. REFLEXÕES SOBRE EDUCAÇÃO, CURRÍCULO E PRÁTICAS CURRICULARES DOS PROFESSORES DA EDUCAÇÃO DE JOVENS E ADULTOS\n- Subseção a ser redigida agora: 1.4 Desafios da EJA e os movimentos de resistência: Fóruns da EJA\n\nDIRETRIZES ESPECÍFICAS PARA ESTA SUBSEÇÃO:\nDiscuta os obstáculos sistêmicos e políticos enfrentados pela modalidade EJA. Em seguida, detalhe o papel dos Fóruns da EJA como movimentos de resistência política e pedagógica, ancorando a narrativa nos dados e autores da fonte. Explore o histórico e a importância desses fóruns de maneira aprofundada para garantir a densidade exigida para o fechamento do capítulo.\n\nTAREFA:\nCom base EXCLUSIVAMENTE no material-fonte, redija a subseção 1.4. Redija o texto com máxima profundidade analítica. Desdobre cada conceito mencionado no texto-fonte em parágrafos completos, explorando suas implicações teóricas. Proibido realizar sínteses ou resumos curtos."
+    },
+    {
+      "id": "cap2_1_desafios",
+      "numero": 2.1,
+      "titulo": "CAP 2.1 — A questão ambiental: desafios contemporâneos no Brasil",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Título: O Pacto Nacional da Educação de Jovens e Adultos (EJA): reflexões sobre as práticas curriculares de professores em meio ambiente nas escolas municipais de Goiás.\n- Capítulo: 2\n- Subseção: 2.1\n\nDIRETRIZES:\nDiscorra sobre a crise ambiental no contexto brasileiro atual utilizando os autores e dados do material-base. Construa um panorama crítico sobre os desafios ecológicos e sociais, afastando-se de visões preservacionistas ingênuas e focando na complexidade sociopolítica do meio ambiente.\n\nTAREFA:\nCom base no material-fonte e mantendo a continuidade com o contexto anterior (se fornecido), redija a subseção 2.1. Expanda cada conceito em parágrafos densos. Proibido fazer sínteses curtas."
+    },
+    {
+      "id": "cap2_2_politicas",
+      "numero": 2.2,
+      "titulo": "CAP 2.2 — Políticas curriculares em educação ambiental para a EJA",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Capítulo: 2\n- Subseção: 2.2\n\nDIRETRIZES:\nAnalise criticamente os documentos e leis que orientam a educação ambiental especificamente para o público da EJA. Baseando-se nas fontes, evidencie como essas políticas são estruturadas, suas lacunas e as contradições entre o texto oficial e a realidade da modalidade.\n\nTAREFA:\nRedija a subseção 2.2 com máxima profundidade analítica. Desdobre a análise documental em parágrafos completos, explorando as implicações teóricas e legais."
+    },
+    {
+      "id": "cap2_3_formacao",
+      "numero": 2.3,
+      "titulo": "CAP 2.3 — A formação ambiental dos professores",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Capítulo: 2\n- Subseção: 2.3\n\nDIRETRIZES:\nAborde a formação inicial e continuada dos professores no que tange à temática ambiental. Utilize o material-fonte para apontar as deficiências dessa formação e as propostas teóricas para uma práxis pedagógica mais engajada e crítica.\n\nTAREFA:\nRedija a subseção 2.3. Detalhe os conceitos de formação docente presentes no texto-base, mantendo o rigor acadêmico e garantindo a densidade textual necessária."
+    },
+    {
+      "id": "cap2_4_direito",
+      "numero": 2.4,
+      "titulo": "CAP 2.4 — O meio ambiente como direito na EJA",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Capítulo: 2\n- Subseção: 2.4\n\nDIRETRIZES:\nArgumente em prol do meio ambiente como um direito humano inalienável, intrinsecamente ligado ao direito à educação de jovens e adultos. Sintetize as discussões do capítulo para defender a cidadania ambiental dos sujeitos da EJA, usando estritamente os referenciais fornecidos.\n\nTAREFA:\nRedija a subseção 2.4, garantindo um fechamento reflexivo e contundente para o segundo capítulo. O texto deve consolidar a relação entre justiça social, EJA e ecologia."
+    },
+    {
+      "id": "cap3_1_apresentacao",
+      "numero": 3.1,
+      "titulo": "CAP 3.1 — Apresentação do Pacto Nacional (EJA)",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Capítulo: 3\n- Subseção: 3.1\n\nDIRETRIZES:\nRealize uma apresentação histórica e institucional do Pacto Nacional. Explique as motivações políticas para sua criação, os marcos de lançamento e a estrutura de governança proposta. O texto deve ser descritivo-analítico, focando na arquitetura da política pública.\n\nTAREFA:\nCom base no material-fonte, redija a subseção 3.1. Expanda cada detalhe institucional em parágrafos densos. Proibido fazer resumos executivos curtos."
+    },
+    {
+      "id": "cap3_2_legislacao",
+      "numero": 3.2,
+      "titulo": "CAP 3.2 — Legislação e documentos importantes",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Capítulo: 3\n- Subseção: 3.2\n\nDIRETRIZES:\nAnalise o arcabouço legal que sustenta o Pacto. Devem ser explorados decretos, portarias e notas técnicas presentes na fonte. Discuta como a legislação amarra as responsabilidades entre União, Estados e Municípios (Goiás).\n\nTAREFA:\nRedija a subseção 3.2 com rigor documental. Não apenas cite as leis, mas analise o impacto jurídico-pedagógico de cada dispositivo citado no material-fonte."
+    },
+    {
+      "id": "cap3_3_curriculares",
+      "numero": 3.3,
+      "titulo": "CAP 3.3 — Aspectos curriculares do Pacto Nacional",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Capítulo: 3\n- Subseção: 3.3\n\nDIRETRIZES:\nEste é o coração técnico do capítulo. Explore as orientações curriculares contidas no Pacto. Como ele propõe alfabetizar? Quais as bases pedagógicas? Relacione com as discussões de currículo feitas no Capítulo 1 para manter a coesão.\n\nTAREFA:\nRedija a subseção 3.3 com máxima profundidade. Desdobre as diretrizes pedagógicas em análises exaustivas sobre a prática esperada."
+    },
+    {
+      "id": "cap3_4_paulo_freire",
+      "numero": 3.4,
+      "titulo": "CAP 3.4 — Medalha Paulo Freire: experiências exitosas",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Capítulo: 3\n- Subseção: 3.4\n\nDIRETRIZES:\nAnalise a Medalha Paulo Freire não apenas como premiação, mas como um repositório de práticas que deram certo. Descreva os critérios de seleção e detalhe as experiências mencionadas no material-fonte, destacando o que as torna 'exitosas' sob a ótica do Pacto.\n\nTAREFA:\nRedija a subseção 3.4. Transforme os exemplos de casos em narrativas acadêmicas ricas, fechando o capítulo com a materialização da política em resultados."
+    },
+    {
+      "id": "cap4_1_escolhas",
+      "numero": 4.1,
+      "titulo": "CAP 4.1 — Escolhas metodológicas",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Capítulo: 4\n- Subseção: 4.1\n\nDIRETRIZES:\nDefina e justifique a abordagem metodológica da pesquisa (qualitativa, quantitativa, estudo de caso, etc.) estritamente com base nos apontamentos do autor no texto-fonte. Fundamente essas escolhas com os teóricos de metodologia citados no material. O tom deve ser de argumentação científica rigorosa.\n\nTAREFA:\nCom base no material-fonte, redija a subseção 4.1. Explique os \"porquês\" das escolhas metodológicas em parágrafos densos. Proibido fazer listagens simples."
+    },
+    {
+      "id": "cap4_2_contexto",
+      "numero": 4.2,
+      "titulo": "CAP 4.2 — O contexto da pesquisa (Cerrado/Goiás)",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Capítulo: 4\n- Subseção: 4.2\n\nDIRETRIZES:\nDescreva geograficamente, socialmente e historicamente o Cerrado brasileiro e, especificamente, os municípios de Goiás onde a pesquisa ocorreu. Use EXCLUSIVAMENTE os dados, estatísticas e descrições fornecidos no material-base.\n\nTAREFA:\nRedija a subseção 4.2. Crie uma narrativa descritiva e acadêmica sobre o território, relacionando as características do local com a relevância de se estudar a educação ambiental ali."
+    },
+    {
+      "id": "cap4_3_sujeitos",
+      "numero": 4.3,
+      "titulo": "CAP 4.3 — Os sujeitos da pesquisa",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Capítulo: 4\n- Subseção: 4.3\n\nDIRETRIZES:\nApresente quem são os professores e/ou alunos envolvidos. Detalhe os critérios de inclusão/exclusão, perfis demográficos e profissionais, utilizando APENAS os dados brutos ou planilhas fornecidas no texto-fonte. Se não houver um número exato na fonte, acione o ALERTA ESCRIBA.\n\nTAREFA:\nRedija a subseção 4.3 com máxima precisão. Caracterize os sujeitos de forma aprofundada, respeitando o anonimato ético conforme descrito na fonte."
+    },
+    {
+      "id": "cap4_4_procedimentos",
+      "numero": 4.4,
+      "titulo": "CAP 4.4 — Procedimentos de produção de dados",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Capítulo: 4\n- Subseção: 4.4\n\nDIRETRIZES:\nDescreva o \"passo a passo\" de como os dados foram coletados no campo (ex: entrevistas, questionários, observação participante). Detalhe as ferramentas utilizadas e as datas ou períodos de campo, conforme narrado na fonte.\n\nTAREFA:\nRedija a subseção 4.4. O texto deve ser minucioso, permitindo que outro pesquisador compreenda exatamente como a coleta foi operacionalizada no chão da escola."
+    },
+    {
+      "id": "cap4_5_analise",
+      "numero": 4.5,
+      "titulo": "CAP 4.5 — Análise dos dados produzidos",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Capítulo: 4\n- Subseção: 4.5\n\nDIRETRIZES:\nExplique qual método foi utilizado para tratar os dados coletados (ex: Análise de Conteúdo de Bardin, Análise do Discurso, etc.). Justifique a adequação desse método aos objetivos da tese, baseando-se no material-fonte.\n\nTAREFA:\nRedija a subseção 4.5, fechando o capítulo metodológico. Descreva o processo de categorização e interpretação dos dados com profundidade teórica."
+    },
+    {
+      "id": "cap5_1_concepcao",
+      "numero": 5.1,
+      "titulo": "CAP 5.1 — Concepção, conhecimento e compreensão",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Capítulo: 5\n- Subseção: 5.1\n\nDIRETRIZES:\nApresente os resultados referentes às concepções prévias, aos conhecimentos e à compreensão dos professores da EJA sobre a temática ambiental. Utilize EXCLUSIVAMENTE os recortes de falas, entrevistas ou dados numéricos presentes no material-fonte. Cruze essas evidências com o referencial teórico dos capítulos anteriores (memória de contexto) para discutir se as concepções são críticas ou ingênuas.\n\nTAREFA:\nCom base no material-fonte, redija a subseção 5.1. Analise profundamente cada trecho de dado fornecido, expandindo a discussão teórica em parágrafos densos. Proibido apenas listar citações sem interpretá-las à luz da teoria."
+    },
+    {
+      "id": "cap5_2_formacao_continuada",
+      "numero": 5.2,
+      "titulo": "CAP 5.2 — Formação continuada, processo permanente",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Capítulo: 5\n- Subseção: 5.2\n\nDIRETRIZES:\nDiscuta os achados da pesquisa de campo referentes à formação continuada dos docentes. Como eles relatam o preparo (ou a falta dele) para trabalhar o meio ambiente na EJA? Ancore a análise nas evidências coletadas e dialogue com a teoria sobre formação docente apresentada no Capítulo 2.\n\nTAREFA:\nRedija a subseção 5.2. O texto deve apresentar máxima profundidade analítica, esmiuçando as contradições ou sucessos relatados pelos sujeitos da pesquisa. Garanta a fluidez argumentativa."
+    },
+    {
+      "id": "cap5_3_praticas_curriculares",
+      "numero": 5.3,
+      "titulo": "CAP 5.3 — Práticas curriculares dos professores e EA",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Capítulo: 5\n- Subseção: 5.3\n\nDIRETRIZES:\nEste é o núcleo do capítulo. Descreva e analise detalhadamente as práticas curriculares reais que foram observadas ou relatadas na pesquisa de campo nas escolas municipais de Goiás. O que os professores efetivamente fazem em sala de aula com a EJA? Avalie essas práticas sob a ótica do currículo crítico discutido no Capítulo 1 e das diretrizes do Pacto Nacional (Capítulo 3).\n\nTAREFA:\nRedija a subseção 5.3 com rigor investigativo. Transforme os dados brutos da prática docente em uma prosa acadêmica robusta e extensa, dissecando as metodologias aplicadas no chão de fábrica."
+    },
+    {
+      "id": "cap5_4_curriculo_avaliado",
+      "numero": 5.4,
+      "titulo": "CAP 5.4 — Currículo avaliado em educação ambiental",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Capítulo: 5\n- Subseção: 5.4\n\nDIRETRIZES:\nAnalise como ocorre a avaliação da aprendizagem em educação ambiental nas turmas de EJA pesquisadas, segundo os dados coletados. Discuta os critérios, os instrumentos avaliativos e as percepções dos professores sobre o sucesso ou fracasso dessas avaliações.\n\nTAREFA:\nRedija a subseção 5.4, garantindo um fechamento denso para o capítulo de resultados. Explore as implicações pedagógicas das formas de avaliação descritas no material-base."
+    },
+    {
+      "id": "cap6_1_retomada",
+      "numero": 6.1,
+      "titulo": "CONSIDERAÇÕES FINAIS: Retomada dos Objetivos",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Seção: Considerações Finais\n- Bloco: 1 (Retomada)\n\nDIRETRIZES:\nInicie as considerações finais resgatando o problema de pesquisa e os objetivos gerais e específicos definidos na Introdução. Com base no material-fonte e no contexto dos capítulos gerados, descreva como o percurso metodológico permitiu responder à pergunta central da tese sobre as práticas curriculares em meio ambiente na EJA em Goiás.\n\nTAREFA:\nRedija o bloco de abertura das Considerações Finais. O texto deve ser maduro e reflexivo, reconectando o leitor ao propósito inicial do estudo. Evite tom de resumo genérico."
+    },
+    {
+      "id": "cap6_2_sintese",
+      "numero": 6.2,
+      "titulo": "CONSIDERAÇÕES FINAIS: Síntese dos Achados",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Seção: Considerações Finais\n- Bloco: 2 (Síntese)\n\nDIRETRIZES:\nSintetize as descobertas cruciais detalhadas no Capítulo 5 (Resultados). O que efetivamente se concluiu sobre as práticas dos professores? Como o Pacto Nacional influencia (ou não) essa realidade? Utilize o contexto anterior para amarrar os dados de campo com as teorias dos Capítulos 1 e 2.\n\nTAREFA:\nRedija a síntese dos achados. O texto deve ter máxima densidade analítica, demonstrando a tese (a ideia central) que o autor provou com esta pesquisa."
+    },
+    {
+      "id": "cap6_3_implicacoes",
+      "numero": 6.3,
+      "titulo": "CONSIDERAÇÕES FINAIS: Implicações da Pesquisa",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Seção: Considerações Finais\n- Bloco: 3 (Implicações)\n\nDIRETRIZES:\nDiscuta as contribuições desta pesquisa. O que a tese traz de novo para a área de Educação de Jovens e Adultos e Educação Ambiental? Baseando-se nas anotações conclusivas do autor, aponte como os resultados podem impactar futuras políticas públicas ou a formação de professores em Goiás e no Brasil.\n\nTAREFA:\nRedija as implicações da pesquisa. Mantenha o rigor acadêmico e justifique a relevância social e científica do trabalho."
+    },
+    {
+      "id": "cap6_4_limitacoes",
+      "numero": 6.4,
+      "titulo": "CONSIDERAÇÕES FINAIS: Limitações e Futuro",
+      "obrigatorio": false,
+      "prompt": "CONTEXTO:\n- Seção: Considerações Finais\n- Bloco: 4 (Fechamento)\n\nDIRETRIZES:\nTodo trabalho científico tem limites. Baseando-se no texto-fonte, aponte as limitações deste estudo (ex: recortes geográficos, dificuldades no campo). Em seguida, sugira novos caminhos e perguntas de pesquisa que outros acadêmicos podem explorar a partir desta tese.\n\nTAREFA:\nRedija o fechamento final da tese. O último parágrafo deve ser contundente e encerrar a argumentação com força e clareza, respeitando a norma culta e o distanciamento acadêmico."
+    }
+  ],
+  "exportacao": {
+    "formatos_suportados": ["pdf", "docx", "tex"],
+    "formato_padrao": "docx"
+  }
+}

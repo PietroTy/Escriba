@@ -10,6 +10,10 @@ import streamlit as st
 import json
 
 import config
+from modules import ingestor, comprehension, generator, polisher, exporter, persistence
+
+# Inicializa diretórios
+persistence.ensure_dir()
 from modules.ingestor import ingest_document
 from modules.comprehension import comprehend
 from modules.generator import generate
@@ -177,6 +181,7 @@ def _init_state():
         "export_mime": None,
         "pipeline_log": [],
         "pipeline_rodou": False,
+        "memoria_tese": persistence.load_session(),
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -281,6 +286,17 @@ with st.sidebar:
         help="Inclui marcadores [VÍDEO], [ÁUDIO], [FIGURA] no texto gerado para design instrucional.",
         key="incluir_markers"
     )
+
+    st.divider()
+    
+    # Memória de Sessão
+    st.markdown("### Memória de Tese")
+    usar_memoria = st.checkbox("Usar contexto de sessões anteriores", value=True)
+    escopo_memoria = st.radio("Escopo da Memória", ["Tudo", "Última seção"], horizontal=True)
+    if st.button("Limpar Memória"):
+        persistence.clear_session()
+        st.session_state["memoria_tese"] = []
+        st.rerun()
 
     st.divider()
     st.markdown(f"""
@@ -444,7 +460,13 @@ if gerar_btn:
                 val = int(45 + frac * 30)
                 progress_bar.progress(val, text=f"Gerando seções... {int(frac * 100)}%")
 
-            generator_results = generate(
+            # Prepara contexto anterior se a memória estiver ativa
+            contexto_anterior = None
+            if usar_memoria and st.session_state["memoria_tese"]:
+                scope_key = "tudo" if escopo_memoria == "Tudo" else "ultima"
+                contexto_anterior = persistence.build_context(st.session_state["memoria_tese"], scope=scope_key)
+
+            generator_results = generator.generate(
                 texto_fonte=texto_fonte,
                 template=template_atual,
                 secoes_selecionadas=secoes_selecionadas,
@@ -453,6 +475,7 @@ if gerar_btn:
                 api_key=api_key,
                 modelo_geracao=modelo_selecionado,
                 incluir_markers=incluir_markers,
+                contexto_anterior=contexto_anterior,
                 status_callback=log_status,
                 progress_callback=gen_progress,
             )
@@ -483,6 +506,18 @@ if gerar_btn:
         st.session_state["export_bytes"] = export_bytes
         st.session_state["export_nome"] = export_nome
         st.session_state["export_mime"] = export_mime
+        # Salva na memória persistente (Tese)
+        for res in polish_results:
+            # Evita duplicatas se rodar a mesma seção
+            st.session_state["memoria_tese"] = [m for m in st.session_state["memoria_tese"] if m["secao_id"] != res.secao_id]
+            st.session_state["memoria_tese"].append({
+                "secao_id": res.secao_id,
+                "secao_titulo": res.secao_titulo,
+                "texto": res.texto_polido,
+            })
+        
+        persistence.save_session(st.session_state["memoria_tese"])
+        
         progress_bar.progress(100, text="Pipeline concluído!")
         st.session_state["pipeline_rodou"] = True
 
@@ -510,7 +545,35 @@ if st.session_state.get("export_bytes") and st.session_state.get("pipeline_rodou
         for tab, resultado in zip(tabs, polish_results):
             with tab:
                 st.markdown(resultado.texto_polido)
-                if resultado.relatorio and "[PLACEHOLDER]" not in resultado.relatorio:
+                
+                # Relatório Detalhado de Auditoria (Módulo 4 — Auditoria Pessimista)
+                if hasattr(resultado, 'aprovada'):
+                    status_cor = "green" if resultado.aprovada else "red"
+                    status_texto = "✅ APROVADA" if resultado.aprovada else "⚠️ ALERTAS DETECTADOS"
+                    
+                    with st.expander(f"🔍 Auditoria de Integridade: {status_texto}", expanded=not resultado.aprovada):
+                        if not resultado.aprovada:
+                            st.error(f"**Veredito:** {resultado.relatorio}")
+                        else:
+                            st.success(f"**Veredito:** {resultado.relatorio}")
+                        
+                        c1, c2, c3 = st.columns(3)
+                        with c1:
+                            f_status = resultado.fidelidade.get('status', 'N/A')
+                            st.markdown(f"**Fidelidade**\n\n{'🟢' if f_status == 'OK' else '🔴'} {f_status}")
+                        with c2:
+                            o_status = resultado.omissao.get('status', 'N/A')
+                            st.markdown(f"**Omissão**\n\n{'🟢' if o_status == 'OK' else '🔴'} {o_status}")
+                        with c3:
+                            v_status = resultado.voz.get('status', 'N/A')
+                            st.markdown(f"**Voz (Verbatim)**\n\n{'🟢' if v_status == 'OK' else '🔴'} {v_status}")
+                        
+                        if not resultado.aprovada:
+                            st.warning(f"**Detalhes dos Alertas:**\n\n"
+                                       f"- **Fidelidade:** {resultado.fidelidade.get('detalhes', 'N/D')}\n"
+                                       f"- **Omissão:** {resultado.omissao.get('detalhes', 'N/D')}\n"
+                                       f"- **Voz:** {resultado.voz.get('detalhes', 'N/D')}")
+                elif resultado.relatorio and "[PLACEHOLDER]" not in resultado.relatorio:
                     with st.expander("Relatório de Auditoria"):
                         st.info(resultado.relatorio)
 
