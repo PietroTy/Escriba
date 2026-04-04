@@ -223,10 +223,15 @@ with st.sidebar:
     # Seleção de Template
     templates_disponiveis = config.listar_templates()
     nomes_templates = {t["nome"]: t["id"] for t in templates_disponiveis}
+    lista_nomes = list(nomes_templates.keys())
+    
+    # Define o índice padrão como "Módulo Educacional" (se existir)
+    default_idx = next((i for i, name in enumerate(lista_nomes) if "Módulo Educacional" in name), 0)
+
     template_nome_selecionado = st.selectbox(
         "Formato de Saída",
-        list(nomes_templates.keys()),
-        index=0,
+        lista_nomes,
+        index=default_idx,
         key="template_selecionado",
         help="O Módulo Educacional é o template principal e totalmente funcional."
     )
