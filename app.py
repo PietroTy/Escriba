@@ -234,6 +234,10 @@ with st.sidebar:
     st.markdown(f'<span class="badge {badge_cor}">{status_template}</span>', unsafe_allow_html=True)
     st.caption(template_atual.get("descricao", ""))
 
+    # Requisitos dinâmicos
+    requisitos = template_atual.get("requisitos", "Requer material-fonte estruturado.")
+    st.info(f"💡 **Requisito de Input:**\n{requisitos}")
+
     st.divider()
 
     # Modelo
@@ -293,6 +297,8 @@ col_esq, col_dir = st.columns([1.1, 1], gap="large")
 
 # ── COLUNA ESQUERDA: Upload + Parâmetros + Seções ──
 with col_esq:
+    st.warning("🛡️ **Zero Alucinação**: O Escriba foi projetado para seguir **estritamente** o seu material de referência. O que não estiver na fonte, não estará no texto final.")
+
     st.markdown("#### 📁 Documento Fonte")
     arquivo = st.file_uploader(
         "Envie um arquivo (PDF, DOCX ou TXT)",
