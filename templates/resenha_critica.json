@@ -2,7 +2,7 @@
   "id": "resenha_critica",
   "nome": "Resenha Crítica",
   "descricao": "Geração de resenhas críticas conforme convenção acadêmica.",
-  "requisitos": "Requer: Texto base + posicionamento ou análise prévia do autor sobre os pontos fortes/fracos da obra.",
+  "requisitos": "Escriba precisa de: Texto da obra + seu posicionamento/critica anotado. O Escriba estrutura a análise, mas não julga sozinho.",
   "norma": "Convenção acadêmica",
   "prioridade": 6,
   "status": "placeholder",

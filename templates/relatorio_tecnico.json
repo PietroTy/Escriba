@@ -2,7 +2,7 @@
   "id": "relatorio_tecnico",
   "nome": "Relatório Técnico",
   "descricao": "Geração de relatórios técnicos conforme ABNT NBR 10719.",
-  "requisitos": "Requer: Dados estatísticos, fatos observados, cronogramas ou diagnóstico de campo direto.",
+  "requisitos": "Escriba precisa de: Fatos, números, datas e diagnóstico. Para anexos e bibliografia, os links e obras devem constar no material-fonte.",
   "norma": "ABNT NBR 10719",
   "prioridade": 4,
   "status": "placeholder",

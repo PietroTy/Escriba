@@ -2,7 +2,7 @@
   "id": "tcc_monografia",
   "nome": "TCC / Monografia",
   "descricao": "Geração de trabalhos de conclusão de curso conforme ABNT NBR 14724.",
-  "requisitos": "Requer: Capítulos iniciais, levantamento bibliográfico e objetivos claros e bem definidos.",
+  "requisitos": "Escriba precisa de: Problema, objetivos e base teórica sólida. Para fundamentar o referencial, inclua a bibliografia e links de estudo no material-fonte.",
   "norma": "ABNT NBR 14724",
   "prioridade": 3,
   "status": "placeholder",

@@ -2,7 +2,7 @@
   "id": "modulo_educacional",
   "nome": "Módulo Educacional (v2.1)",
   "descricao": "Geração professional (Enap-Style) com Identificação, Objetivos e suporte a Marcadores de Mídia.",
-  "requisitos": "Requer: Apostilas, slides, transcrições ou textos estruturados. Ideal para transformar material bruto em curso autoinstrucional.",
+  "requisitos": "Escriba precisa de: Apostilas, slides ou notas de aula densas. Para seções de 'Links' e 'Referências', os endereços e obras devem estar citados no material fornecido.",
   "norma": "Diretrizes Pedagógicas / Enap-IFSP",
   "prioridade": 1,
   "secoes": [
