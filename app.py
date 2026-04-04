@@ -21,7 +21,7 @@ from modules.exporter import export
 # ──────────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title=config.APP_NOME,
-    page_icon="📜",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -189,7 +189,7 @@ _init_state()
 # ──────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="escriba-header">
-    <h1>📜 Escriba v2.0</h1>
+    <h1>Escriba v2.0</h1>
     <p>Central modular de processamento acadêmico com IA • Maritaca Sabiá</p>
 </div>
 """, unsafe_allow_html=True)
@@ -198,20 +198,20 @@ st.markdown("""
 # Sidebar — Configurações
 # ──────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### ⚙️ Configurações")
+    st.markdown("### Configurações")
 
     # API Key
     api_key = config.get_api_key()
     if not api_key:
         api_key = st.text_input(
-            "🔑 Chave API Maritaca",
+            "Chave API Maritaca",
             type="password",
             placeholder="Cole sua chave aqui",
             help="Configure em .streamlit/secrets.toml para não precisar inserir manualmente.",
             key="api_key_input"
         )
     else:
-        st.success("✅ API Key carregada automaticamente")
+        st.success("API Key carregada automaticamente")
 
     st.divider()
 
@@ -219,7 +219,7 @@ with st.sidebar:
     templates_disponiveis = config.listar_templates()
     nomes_templates = {t["nome"]: t["id"] for t in templates_disponiveis}
     template_nome_selecionado = st.selectbox(
-        "📐 Formato de Saída",
+        "Formato de Saída",
         list(nomes_templates.keys()),
         index=0,
         key="template_selecionado",
@@ -236,7 +236,7 @@ with st.sidebar:
 
     # Requisitos dinâmicos
     requisitos = template_atual.get("requisitos", "Requer material-fonte estruturado.")
-    st.info(f"💡 **Requisito de Input:**\n{requisitos}")
+    st.info(f"**Requisito de Input:**\n{requisitos}")
 
     st.divider()
 
@@ -244,7 +244,7 @@ with st.sidebar:
     modelos_opcoes = list(config.MODELOS.keys())
     modelo_idx = modelos_opcoes.index(config.MODELO_PADRAO_GERACAO)
     modelo_selecionado = st.selectbox(
-        "🤖 Modelo de Geração",
+        "Modelo de Geração",
         modelos_opcoes,
         index=modelo_idx,
         format_func=lambda m: config.MODELOS[m]["nome_exibicao"],
@@ -252,20 +252,20 @@ with st.sidebar:
     )
     info_modelo = config.MODELOS[modelo_selecionado]
     st.caption(
-        f"📦 Contexto: {info_modelo['contexto_tokens']:,} tokens | "
-        f"💰 R$ {info_modelo['custo_output_por_milhao_brl']:.2f}/1M tokens"
+        f"Contexto: {info_modelo['contexto_tokens']:,} tokens | "
+        f"Custo: R$ {info_modelo['custo_output_por_milhao_brl']:.2f}/1M tokens"
     )
 
     st.divider()
 
     # Idioma
-    idioma = st.selectbox("🌐 Idioma de Saída", config.IDIOMAS, key="idioma_selecionado")
+    idioma = st.selectbox("Idioma de Saída", config.IDIOMAS, key="idioma_selecionado")
 
     st.divider()
 
     # Formato de exportação
     formato_export = st.selectbox(
-        "💾 Formato de Download",
+        "Formato de Download",
         config.FORMATOS_EXPORTACAO,
         index=0,
         format_func=lambda f: f.upper(),
@@ -276,7 +276,7 @@ with st.sidebar:
 
     # Marcadores de Mídia (Modular)
     incluir_markers = st.checkbox(
-        "🎬 Sugestões de Mídia",
+        "Sugestões de Mídia",
         value=True,
         help="Inclui marcadores [VÍDEO], [ÁUDIO], [FIGURA] no texto gerado para design instrucional.",
         key="incluir_markers"
@@ -297,9 +297,9 @@ col_esq, col_dir = st.columns([1.1, 1], gap="large")
 
 # ── COLUNA ESQUERDA: Upload + Parâmetros + Seções ──
 with col_esq:
-    st.warning("🛡️ **Zero Alucinação**: O Escriba foi projetado para seguir **estritamente** o seu material de referência. O que não estiver na fonte, não estará no texto final.")
+    st.warning("**Zero Alucinação**: O Escriba foi projetado para seguir **estritamente** o seu material de referência. O que não estiver na fonte, não estará no texto final.")
 
-    st.markdown("#### 📁 Documento Fonte")
+    st.markdown("#### Documento Fonte")
     arquivo = st.file_uploader(
         "Envie um arquivo (PDF, DOCX ou TXT)",
         type=["pdf", "txt", "docx"],
@@ -307,11 +307,11 @@ with col_esq:
         label_visibility="collapsed",
     )
     if arquivo:
-        st.success(f"📎 **{arquivo.name}** carregado")
+        st.success(f"**{arquivo.name}** carregado")
 
     st.divider()
 
-    st.markdown("#### 📝 Tema Geral")
+    st.markdown("#### Tema Geral")
     tema = st.text_input(
         "Descreva brevemente o tema do documento:",
         placeholder="Ex: Introdução à Programação em Python para iniciantes",
@@ -322,14 +322,14 @@ with col_esq:
     st.divider()
 
     # Seleção de seções
-    st.markdown(f"#### 🗂️ Seções — *{template_nome_selecionado}*")
+    st.markdown(f"#### Seções — *{template_nome_selecionado}*")
     secoes_template = template_atual.get("secoes", [])
     secoes_selecionadas = []
 
     for secao in secoes_template:
         obrigatorio = secao.get("obrigatorio", False)
         selecionada = st.checkbox(
-            f"{'🔒 ' if obrigatorio else ''}Seção {secao['numero']}: {secao['titulo']}",
+            f"{'Obrigatório ' if obrigatorio else ''}Seção {secao['numero']}: {secao['titulo']}",
             value=obrigatorio or (not obrigatorio and secao['numero'] in [1, 2, 5]),
             key=f"sec_{secao['id']}",
             disabled=False,
@@ -341,26 +341,26 @@ with col_esq:
 
     # Botão principal
     gerar_btn = st.button(
-        "🚀 Processar Documento",
+        "Processar Documento",
         use_container_width=True,
         type="primary",
         key="btn_processar",
         disabled=not api_key,
     )
     if not api_key:
-        st.warning("⚠️ Configure a API Key na barra lateral para processar.")
+        st.warning("Configure a API Key na barra lateral para processar.")
 
 # ── COLUNA DIREITA: Pipeline + Resultado ──
 with col_dir:
-    st.markdown("#### 🔄 Pipeline de Processamento")
+    st.markdown("#### Pipeline de Processamento")
 
     # Status cards do pipeline
     etapas = [
-        ("ingestor", "📄 Módulo 1 — Ingestão", "Funcional", "badge-funcional"),
-        ("comprehension", "🧠 Módulo 2 — Compreensão", "Placeholder (CoVe roadmap)", "badge-placeholder"),
-        ("generator", "⚙️ Módulo 3 — Geração", "Funcional", "badge-funcional"),
-        ("polisher", "✍️ Módulo 4 — Polimento", "Placeholder (sabia-4 roadmap)", "badge-placeholder"),
-        ("exporter", "📤 Módulo 5 — Exportação", "Funcional", "badge-funcional"),
+        ("ingestor", "Módulo 1 — Ingestão", "Funcional", "badge-funcional"),
+        ("comprehension", "Módulo 2 — Compreensão", "Placeholder (CoVe roadmap)", "badge-placeholder"),
+        ("generator", "Módulo 3 — Geração", "Funcional", "badge-funcional"),
+        ("polisher", "Módulo 4 — Polimento", "Placeholder (sabia-4 roadmap)", "badge-placeholder"),
+        ("exporter", "Módulo 5 — Exportação", "Funcional", "badge-funcional"),
     ]
 
     for etapa_id, etapa_nome, etapa_status, badge_class in etapas:
@@ -376,7 +376,7 @@ with col_dir:
 
     # Log do pipeline
     if st.session_state["pipeline_log"]:
-        with st.expander("📋 Log de Execução", expanded=True):
+        with st.expander("Log de Execução", expanded=True):
             for linha in st.session_state["pipeline_log"]:
                 st.markdown(f"- {linha}")
 
@@ -385,10 +385,10 @@ with col_dir:
 # ──────────────────────────────────────────────────────────────────
 if gerar_btn:
     if not tema and not arquivo:
-        st.error("❌ Informe o tema geral ou envie um arquivo para processar.")
+        st.error("Informe o tema geral ou envie um arquivo para processar.")
         st.stop()
     if not secoes_selecionadas:
-        st.error("❌ Selecione ao menos uma seção para gerar.")
+        st.error("Selecione ao menos uma seção para gerar.")
         st.stop()
 
     log = []
@@ -397,7 +397,7 @@ if gerar_btn:
 
     # Barra de progresso central
     st.markdown("---")
-    st.markdown("#### ⏳ Processando...")
+    st.markdown("#### Processando...")
     progress_bar = st.progress(0, text="Iniciando pipeline...")
     status_area = st.empty()
 
@@ -416,22 +416,25 @@ if gerar_btn:
         else:
             texto_fonte = ""
             cache_key = f"no_file__{tema}__{modelo_selecionado}__{idioma}__{incluir_markers}"
-            log_status("📝 Sem arquivo — usando apenas o tema informado.")
+            log_status("Sem arquivo — usando apenas o tema informado.")
+            log_status("Módulo 1 concluído")
 
         st.session_state["ingestor_result"] = ingestor_result if arquivo else None
-        progress_bar.progress(20, text="Módulo 1 concluído ✅")
+        progress_bar.progress(20, text="Módulo 1 concluído")
 
         # Cache check
         if cache_key in st.session_state["cache"]:
-            log_status("⚡ Conteúdo idêntico encontrado no cache! Reutilizando resultado anterior.")
+            log_status("Conteúdo idêntico encontrado no cache! Reutilizando resultado anterior.")
             polish_results = st.session_state["cache"][cache_key]
-            progress_bar.progress(90, text="Cache carregado ✅")
+            log_status("Cache carregado")
+            progress_bar.progress(90, text="Cache carregado")
         else:
             # ─── Módulo 2: Compreensão ──────────────────────────
             progress_bar.progress(25, text="Módulo 2: Compreensão...")
             comp_result = comprehend(texto_fonte, status_callback=log_status)
             st.session_state["comprehension_result"] = comp_result
-            progress_bar.progress(40, text="Módulo 2 concluído ✅")
+            log_status("Módulo 2 concluído")
+            progress_bar.progress(40, text="Módulo 2 concluído")
 
             # ─── Módulo 3: Geração ──────────────────────────────
             progress_bar.progress(45, text="Módulo 3: Geração com IA...")
@@ -454,7 +457,7 @@ if gerar_btn:
                 progress_callback=gen_progress,
             )
             st.session_state["generator_results"] = generator_results
-            progress_bar.progress(75, text="Módulo 3 concluído ✅")
+            progress_bar.progress(75, text="Módulo 3 concluído")
 
             # ─── Módulo 4: Polimento ────────────────────────────
             progress_bar.progress(78, text="Módulo 4: Polimento e auditoria...")
@@ -466,7 +469,7 @@ if gerar_btn:
             )
             st.session_state["polish_results"] = polish_results
             st.session_state["cache"][cache_key] = polish_results
-            progress_bar.progress(88, text="Módulo 4 concluído ✅")
+            progress_bar.progress(88, text="Módulo 4 concluído")
 
         # ─── Módulo 5: Exportação ───────────────────────────
         progress_bar.progress(90, text="Módulo 5: Exportação...")
@@ -480,20 +483,20 @@ if gerar_btn:
         st.session_state["export_bytes"] = export_bytes
         st.session_state["export_nome"] = export_nome
         st.session_state["export_mime"] = export_mime
-        progress_bar.progress(100, text="✅ Pipeline concluído!")
+        progress_bar.progress(100, text="Pipeline concluído!")
         st.session_state["pipeline_rodou"] = True
 
     except Exception as e:
-        progress_bar.progress(0, text="❌ Erro no pipeline")
+        progress_bar.progress(0, text="Erro no pipeline")
         st.error(f"**Erro durante o processamento:** {e}")
-        log_status(f"❌ ERRO: {e}")
+        log_status(f"ERRO: {e}")
 
 # ──────────────────────────────────────────────────────────────────
 # Resultado — Preview e Downloads
 # ──────────────────────────────────────────────────────────────────
 if st.session_state.get("export_bytes") and st.session_state.get("pipeline_rodou"):
     st.markdown("---")
-    st.markdown("### ✅ Resultado Gerado")
+    st.markdown("### Resultado Gerado")
 
     polish_results = st.session_state.get("polish_results", [])
 
@@ -508,13 +511,13 @@ if st.session_state.get("export_bytes") and st.session_state.get("pipeline_rodou
             with tab:
                 st.markdown(resultado.texto_polido)
                 if resultado.relatorio and "[PLACEHOLDER]" not in resultado.relatorio:
-                    with st.expander("📊 Relatório de Auditoria"):
+                    with st.expander("Relatório de Auditoria"):
                         st.info(resultado.relatorio)
 
     st.divider()
 
     # Downloads
-    st.markdown("#### 💾 Download")
+    st.markdown("#### Download")
     col_d1, col_d2, col_d3, col_d4 = st.columns(4)
 
     export_bytes_pdf, nome_pdf, mime_pdf = export(polish_results, "pdf", tema or "Documento", idioma)
@@ -523,20 +526,20 @@ if st.session_state.get("export_bytes") and st.session_state.get("pipeline_rodou
     export_bytes_tex, nome_tex, mime_tex = export(polish_results, "tex", tema or "Documento", idioma)
 
     with col_d1:
-        st.download_button("📄 PDF", export_bytes_pdf, nome_pdf, mime_pdf, use_container_width=True, key="dl_pdf")
+        st.download_button("PDF", export_bytes_pdf, nome_pdf, mime_pdf, use_container_width=True, key="dl_pdf")
     with col_d2:
-        st.download_button("📝 TXT", export_bytes_txt, nome_txt, mime_txt, use_container_width=True, key="dl_txt")
+        st.download_button("TXT", export_bytes_txt, nome_txt, mime_txt, use_container_width=True, key="dl_txt")
     with col_d3:
-        st.download_button("📃 DOCX", export_bytes_docx, nome_docx, mime_docx, use_container_width=True, key="dl_docx")
+        st.download_button("DOCX", export_bytes_docx, nome_docx, mime_docx, use_container_width=True, key="dl_docx")
     with col_d4:
-        st.download_button("🔬 LaTeX", export_bytes_tex, nome_tex, mime_tex, use_container_width=True, key="dl_tex")
+        st.download_button("LaTeX", export_bytes_tex, nome_tex, mime_tex, use_container_width=True, key="dl_tex")
 
 # ──────────────────────────────────────────────────────────────────
 # Rodapé
 # ──────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="escriba-footer">
-    📜 <strong>Escriba v2.0</strong> — Central modular de processamento acadêmico com IA<br>
+    <strong>Escriba v2.0</strong> — Central modular de processamento acadêmico com IA<br>
     Desenvolvido por <strong>{config.APP_AUTOR}</strong> • {config.APP_ANO} •
     Powered by <strong>Maritaca Sabiá</strong>
 </div>

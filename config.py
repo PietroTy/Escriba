@@ -23,7 +23,7 @@ MODELOS = {
         "uso_recomendado": ["metadados", "limpeza"],
     },
     "sabiazinho-4": {
-        "nome_exibicao": "Sabiazinho 4 (recomendado ★)",
+        "nome_exibicao": "Sabiazinho 4 (recomendado)",
         "descricao": "Motor principal de geração. Melhor custo-benefício com 128k de contexto.",
         "contexto_tokens": 128_000,
         "custo_output_por_milhao_brl": 4.00,
