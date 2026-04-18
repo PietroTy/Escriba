@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Optional, Callable
 
 try:
@@ -117,11 +118,15 @@ def polish(
 
         audit_report = _double_check(client, secao.texto, texto_fonte, modelo_auditoria)
 
+        # Sanitização de LLM-speak e de cabeçalhos brutos da IA (Ex: "Aqui está...")
+        clean_text = re.sub(r'^(Aqui est[áa]|Abaixo est[áa]|Segue|Com base nos).*?:?\s*(\\n+|$)', '', secao.texto, flags=re.IGNORECASE|re.DOTALL)
+        clean_text = clean_text.strip()
+
         resultados.append(PolishResult(
             secao_id=secao.secao_id,
             secao_titulo=secao.secao_titulo,
             texto_original=secao.texto,
-            texto_polido=secao.texto,  # Implementação de re-escrita gramatical futura
+            texto_polido=clean_text,
             aprovada=audit_report.get("aprovada", False),
             fidelidade=audit_report.get("fidelidade", {}),
             omissao=audit_report.get("omissao", {}),

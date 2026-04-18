@@ -58,21 +58,32 @@ def _gerar_pdf(secoes: list, tema: str, idioma: str) -> bytes:
         canvas.restoreState()
 
     story = []
-    data_geracao = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
 
-    story.append(Paragraph("Escriba v2.0", styles["TitleMain"]))
-    story.append(Paragraph(tema or "Documento Gerado", styles["HeadingSection"]))
-    story.append(Paragraph(f"Idioma: {idioma} • Gerado: {data_geracao}", styles["ModuleMeta"]))
-    story.append(Spacer(1, 0.2 * inch))
-    story.append(PageBreak())
+    if tema:
+        story.append(Paragraph(tema, styles["HeadingSection"]))
+        story.append(Spacer(1, 0.2 * inch))
+
+    import re
 
     for secao in secoes:
         titulo = secao.get("titulo", "")
         texto = secao.get("texto", "")
-        story.append(Paragraph(titulo, styles["HeadingSection"]))
+        if titulo:
+            story.append(Paragraph(titulo, styles["HeadingSection"]))
 
-        for paragrafo in [p.strip() for p in texto.split("\n\n") if p.strip()]:
-            story.append(Paragraph(paragrafo.replace("\n", "<br/>"), styles["EscribaBody"]))
+        for paragrafo in [p.strip() for p in texto.split("\\n\\n") if p.strip()]:
+            # Convert Markdown headers
+            header_match = re.match(r'^(#{1,6})\\s+(.*)', paragrafo)
+            if header_match:
+                story.append(Paragraph(header_match.group(2).strip(), styles["HeadingSection"]))
+                continue
+
+            p_formatado = paragrafo.replace("\\n", "<br/>")
+            # Convert bold and italic for ReportLab HTML-like tags
+            p_formatado = re.sub(r'\\*\\*(.*?)\\*\\*', r'<b>\\1</b>', p_formatado)
+            p_formatado = re.sub(r'\\*([^\s\*].*?[^\s\*])\\*', r'<i>\\1</i>', p_formatado)
+
+            story.append(Paragraph(p_formatado, styles["EscribaBody"]))
 
         story.append(Spacer(1, 0.12 * inch))
 
@@ -84,17 +95,17 @@ def _gerar_pdf(secoes: list, tema: str, idioma: str) -> bytes:
 # --- TXT simples ---
 def _gerar_txt(secoes: list, tema: str, idioma: str) -> bytes:
     """Gera arquivo TXT simples."""
-    linhas = [
-        f"ESCRIBA v2.0 — {tema}",
-        f"Idioma: {idioma} | Gerado: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}",
-        "=" * 60, ""
-    ]
+    linhas = []
+    if tema:
+        linhas.append(f"TEMA: {tema}\\n{'=' * 60}\\n")
+    
     for secao in secoes:
-        linhas.append(f"\n{'=' * 40}")
-        linhas.append(secao.get("titulo", ""))
-        linhas.append("=" * 40)
+        if secao.get("titulo", ""):
+            linhas.append(f"\\n{'=' * 40}")
+            linhas.append(secao.get("titulo", ""))
+            linhas.append("=" * 40)
         linhas.append(secao.get("texto", ""))
-    return "\n".join(linhas).encode("utf-8")
+    return "\\n".join(linhas).encode("utf-8")
 
 
 # --- DOCX via python-docx ---
@@ -107,15 +118,36 @@ def _gerar_docx(secoes: list, tema: str, idioma: str) -> bytes:
         raise ImportError("python-docx não instalado. Execute: pip install python-docx")
 
     doc = DocxDocument()
-    doc.add_heading(f"Escriba v2.0 — {tema}", level=0)
-    doc.add_paragraph(f"Idioma: {idioma} | Gerado: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}")
-    doc.add_page_break()
+    if tema:
+        doc.add_heading(tema, level=0)
+
+    import re
 
     for secao in secoes:
-        doc.add_heading(secao.get("titulo", ""), level=2)
+        if secao.get("titulo", ""):
+            doc.add_heading(secao.get("titulo", ""), level=2)
         texto = secao.get("texto", "")
-        for paragrafo in [p.strip() for p in texto.split("\n\n") if p.strip()]:
-            doc.add_paragraph(paragrafo)
+        
+        for paragrafo in [p.strip() for p in texto.split("\\n\\n") if p.strip()]:
+            # Suporte para Cabeçalhos Markdown
+            header_match = re.match(r'^(#{1,6})\\s+(.*)', paragrafo)
+            if header_match:
+                level = len(header_match.group(1))
+                doc.add_heading(header_match.group(2).strip(), level=level)
+                continue
+
+            p_obj = doc.add_paragraph()
+            # Suporte para Negrito e Itálico simultâneos
+            parts = re.split(r'(\\*\\*.*?\\*\\*|\\*[^\s\*].*?[^\s\*]\\*)', paragrafo)
+            for part in parts:
+                if part.startswith('**') and part.endswith('**'):
+                    run = p_obj.add_run(part[2:-2])
+                    run.bold = True
+                elif part.startswith('*') and part.endswith('*') and len(part) > 2:
+                    run = p_obj.add_run(part[1:-1])
+                    run.italic = True
+                else:
+                    p_obj.add_run(part)
 
     buffer = io.BytesIO()
     doc.save(buffer)
