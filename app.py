@@ -539,13 +539,26 @@ if gerar_btn:
 
         # ─── Módulo 5: Exportação ───────────────────────────
         progress_bar.progress(90, text="Módulo 5: Exportação...")
-        export_bytes, export_nome, export_mime = export(
-            polish_results=polish_results,
-            formato=formato_export,
-            tema=tema or "Documento Gerado",
-            idioma=idioma,
-            status_callback=log_status,
-        )
+        
+        # Gera os formatos e faz cache em session_state para evitar lentidão do ReportLab nos re-renders.
+        st.session_state["exports_list"] = {}
+        formatos_gerar = ["pdf", "txt", "docx", "tex"]
+        for fmt in formatos_gerar:
+            eb, en, em = export(
+                polish_results=polish_results,
+                formato=fmt,
+                tema=tema or "Documento Gerado",
+                idioma=idioma,
+                status_callback=None
+            )
+            st.session_state["exports_list"][fmt] = (eb, en, em)
+            
+        # Pega o selecionado como default
+        try:
+            export_bytes, export_nome, export_mime = st.session_state["exports_list"].get(formato_export.lower())
+        except Exception:
+             export_bytes, export_nome, export_mime = st.session_state["exports_list"].get("docx")
+
         st.session_state["export_bytes"] = export_bytes
         st.session_state["export_nome"] = export_nome
         st.session_state["export_mime"] = export_mime
@@ -626,19 +639,20 @@ if st.session_state.get("export_bytes") and st.session_state.get("pipeline_rodou
     st.markdown("#### Download")
     col_d1, col_d2, col_d3, col_d4 = st.columns(4)
 
-    export_bytes_pdf, nome_pdf, mime_pdf = export(polish_results, "pdf", tema or "Documento", idioma)
-    export_bytes_txt, nome_txt, mime_txt = export(polish_results, "txt", tema or "Documento", idioma)
-    export_bytes_docx, nome_docx, mime_docx = export(polish_results, "docx", tema or "Documento", idioma)
-    export_bytes_tex, nome_tex, mime_tex = export(polish_results, "tex", tema or "Documento", idioma)
-
-    with col_d1:
-        st.download_button("PDF", export_bytes_pdf, nome_pdf, mime_pdf, use_container_width=True, key="dl_pdf")
-    with col_d2:
-        st.download_button("TXT", export_bytes_txt, nome_txt, mime_txt, use_container_width=True, key="dl_txt")
-    with col_d3:
-        st.download_button("DOCX", export_bytes_docx, nome_docx, mime_docx, use_container_width=True, key="dl_docx")
-    with col_d4:
-        st.download_button("LaTeX", export_bytes_tex, nome_tex, mime_tex, use_container_width=True, key="dl_tex")
+    exports_list = st.session_state.get("exports_list", {})
+    
+    if "pdf" in exports_list:
+        with col_d1:
+            st.download_button("PDF", exports_list["pdf"][0], exports_list["pdf"][1], exports_list["pdf"][2], use_container_width=True, key="dl_pdf")
+    if "txt" in exports_list:
+        with col_d2:
+            st.download_button("TXT", exports_list["txt"][0], exports_list["txt"][1], exports_list["txt"][2], use_container_width=True, key="dl_txt")
+    if "docx" in exports_list:
+        with col_d3:
+            st.download_button("DOCX", exports_list["docx"][0], exports_list["docx"][1], exports_list["docx"][2], use_container_width=True, key="dl_docx")
+    if "tex" in exports_list:
+        with col_d4:
+            st.download_button("LaTeX", exports_list["tex"][0], exports_list["tex"][1], exports_list["tex"][2], use_container_width=True, key="dl_tex")
 
 # ──────────────────────────────────────────────────────────────────
 # Rodapé
