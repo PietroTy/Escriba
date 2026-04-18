@@ -71,17 +71,17 @@ def _gerar_pdf(secoes: list, tema: str, idioma: str) -> bytes:
         if titulo:
             story.append(Paragraph(titulo, styles["HeadingSection"]))
 
-        for paragrafo in [p.strip() for p in texto.split("\\n\\n") if p.strip()]:
+        for paragrafo in [p.strip() for p in texto.split("\n\n") if p.strip()]:
             # Convert Markdown headers
-            header_match = re.match(r'^(#{1,6})\\s+(.*)', paragrafo)
+            header_match = re.match(r'^(#{1,6})\s+(.*)', paragrafo)
             if header_match:
                 story.append(Paragraph(header_match.group(2).strip(), styles["HeadingSection"]))
                 continue
 
-            p_formatado = paragrafo.replace("\\n", "<br/>")
+            p_formatado = paragrafo.replace("\n", "<br/>")
             # Convert bold and italic for ReportLab HTML-like tags
-            p_formatado = re.sub(r'\\*\\*(.*?)\\*\\*', r'<b>\\1</b>', p_formatado)
-            p_formatado = re.sub(r'\\*([^\s\*].*?[^\s\*])\\*', r'<i>\\1</i>', p_formatado)
+            p_formatado = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', p_formatado)
+            p_formatado = re.sub(r'\*([^\s\*].*?[^\s\*])\*', r'<i>\1</i>', p_formatado)
 
             story.append(Paragraph(p_formatado, styles["EscribaBody"]))
 
@@ -97,15 +97,15 @@ def _gerar_txt(secoes: list, tema: str, idioma: str) -> bytes:
     """Gera arquivo TXT simples."""
     linhas = []
     if tema:
-        linhas.append(f"TEMA: {tema}\\n{'=' * 60}\\n")
+        linhas.append(f"TEMA: {tema}\n{'=' * 60}\n")
     
     for secao in secoes:
         if secao.get("titulo", ""):
-            linhas.append(f"\\n{'=' * 40}")
+            linhas.append(f"\n{'=' * 40}")
             linhas.append(secao.get("titulo", ""))
             linhas.append("=" * 40)
         linhas.append(secao.get("texto", ""))
-    return "\\n".join(linhas).encode("utf-8")
+    return "\n".join(linhas).encode("utf-8")
 
 
 # --- DOCX via python-docx ---
@@ -128,9 +128,9 @@ def _gerar_docx(secoes: list, tema: str, idioma: str) -> bytes:
             doc.add_heading(secao.get("titulo", ""), level=2)
         texto = secao.get("texto", "")
         
-        for paragrafo in [p.strip() for p in texto.split("\\n\\n") if p.strip()]:
+        for paragrafo in [p.strip() for p in texto.split("\n\n") if p.strip()]:
             # Suporte para Cabeçalhos Markdown
-            header_match = re.match(r'^(#{1,6})\\s+(.*)', paragrafo)
+            header_match = re.match(r'^(#{1,6})\s+(.*)', paragrafo)
             if header_match:
                 level = len(header_match.group(1))
                 doc.add_heading(header_match.group(2).strip(), level=level)
@@ -138,7 +138,7 @@ def _gerar_docx(secoes: list, tema: str, idioma: str) -> bytes:
 
             p_obj = doc.add_paragraph()
             # Suporte para Negrito e Itálico simultâneos
-            parts = re.split(r'(\\*\\*.*?\\*\\*|\\*[^\s\*].*?[^\s\*]\\*)', paragrafo)
+            parts = re.split(r'(\*\*.*?\*\*|\*[^\s\*].*?[^\s\*]\*)', paragrafo)
             for part in parts:
                 if part.startswith('**') and part.endswith('**'):
                     run = p_obj.add_run(part[2:-2])
