@@ -72,7 +72,6 @@ def _build_system_prompt(texto_fatos: str, texto_modelo: str, idioma: str, tema:
             "DIRETRIZ DE FLUXO E MÍDIA: Intercale os fatos ao longo de todo o texto suavemente. Sugira pontos de interatividade usando marcadores "
             "como [ VÍDEO ], [ ÁUDIO ] ou [ TABELA ] apenas quando fizer sentido.\\n\\n"
         )
-        )
 
     return prompt
 
