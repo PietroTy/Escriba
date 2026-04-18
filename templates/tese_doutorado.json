@@ -11,6 +11,7 @@
       "numero": 1,
       "titulo": "1.1 Apresentação do Tema",
       "obrigatorio": true,
+      "skeleton_expansion": true,
       "sub_prompts": [
         "Escreva 3 parágrafos longos ESTRITAMENTE focados na apresentação histórica e macro-social do tema/problema principal utilizando os dados da base de Fatos. Mantenha o formato da primeira pessoa do singular se a sua diretiva base de formatação pedir.",
         "Escreva de 2 a 3 parágrafos narrativos afunilando do contexto macro explicado anteriormente para a realidade e localidade geográfica exata tratada na pesquisa (ex: bioma, estado ou município). Aplique a Template Retórica: apresente as políticas públicas e demonstre a implicação fática da exclusão no local."
@@ -21,6 +22,7 @@
       "numero": 2,
       "titulo": "1.2 Trajetória do(a) Pesquisador(a)",
       "obrigatorio": true,
+      "skeleton_expansion": true,
       "sub_prompts": [
         "Esta é uma seção fortemente autobiográfica. Escreva pelo menos 3 parágrafos narrando as inquietações profissionais e as bases da relação do professor/autor com o seu objeto de estudo. Copie rigorosamente o tom de confidência e observação empírica (se presente) no material modelo de formatação.",
         "Aprofunde a narrativa com mais 2 ou 3 parágrafos detalhando as dores ou falhas no sistema atual (segundo os fatos) percebidas através dessa trajetória descrita."
@@ -31,6 +33,7 @@
       "numero": 3,
       "titulo": "1.3 Revisão Bibliográfica Preliminar",
       "obrigatorio": true,
+      "skeleton_expansion": true,
       "sub_prompts": [
         "Extraia o PRIMEIRO autor base ou grupo focal contidos nos fatos. Escreva cerca de 3 a 4 parágrafos dissecando e ancorando essa teoria aos problemas diários relatados na trajetória ou nos fatos. Estrutura forçada por parágrafo: 1) Apresentar o axioma do autor; 2) Discutir a implicação na realidade de campo; 3) Fazer elo narrativo autoral.",
         "Extraia O PRÓXIMO conjunto de autores (ex: o segundo pilar teórico) da base de fatos. Escreva mais 3 ou 4 parágrafos focados SOMENTE nessa lente, de forma contígua, desenvolvendo o diálogo entre as teorias emancipadoras e o cenário escolar ou público em questão. Proibido fazer name dropping (ex: saltar freneticamente de um autor pra outro).",
@@ -42,6 +45,7 @@
       "numero": 4,
       "titulo": "1.4 Considerações Metodológicas",
       "obrigatorio": true,
+      "skeleton_expansion": true,
       "sub_prompts": [
         "Retome a voz narrativa autobiográfica (modelo) e redija as diretrizes de campo que o autor utilizará mencionadas nos Fatos. Crie 3 parágrafos robustos que fundamentam essa escolha.",
         "Finalize com 2 parágrafos detalhando os próximos passos operacionais e como o referencial listado sustenta metodologicamente essas etapas."

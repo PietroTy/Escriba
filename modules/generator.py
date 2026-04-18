@@ -60,7 +60,9 @@ def _build_system_prompt(texto_fatos: str, texto_modelo: str, idioma: str, tema:
         prompt += (
             "DIRETRIZ DE ESTILO / PERSONA OBRIGATÓRIA GLOBAL:\\n"
             "VOCÊ FOI CONDICIONADO A HACKEAR E COPIAR o tom de voz e estilo narrativa do MATERIAL-FONTE DE MODELO (abaixo). "
-            "Sua escrita não pode soar como IA. Copie os conectivos, a 1ª pessoa do singular (se usada). "
+            "Sua escrita não pode soar como IA. Assuma a voz confessional e vivencial (O EU PESQUISADOR) homogeneamente do "
+            "primeiro ao último parágrafo, sem transições abruptas para jargão impessoal. Se a base usar 1ª Pessoa, o documento "
+            "TODO DEVE SER EM 1ª PESSOA, incluindo introduções de contexto global.\\n"
             "---\\n"
             f"{texto_modelo[:10000]}\\n"  
             "---\\n\\n"
@@ -160,90 +162,95 @@ def generate(
         if status_callback:
             status_callback(f"⚙️ Gerando: {secao['titulo']} ({i+1}/{total})...")
 
-        # Suporte para sub-prompts (Micro-chunking)
-        sub_prompts = secao.get("sub_prompts")
-        if sub_prompts and isinstance(sub_prompts, list):
-            texto_gerado_acc = []
-            contexto_interno = contexto_anterior or ""
-            for idx_sub, sprompt in enumerate(sub_prompts):
-                if status_callback:
-                    status_callback(f"⚙️ Gerando: {secao['titulo']} (Sub-tópico {idx_sub+1}/{len(sub_prompts)})...")
+        skeleton_expansion = secao.get("skeleton_expansion", False)
+        sub_prompts = secao.get("sub_prompts", [secao.get("prompt", "")])
+        texto_gerado_acc = []
+        contexto_interno = contexto_anterior or ""
+        
+        for idx_sub, base_prompt in enumerate(sub_prompts):
+            if not base_prompt: continue
+            
+            # NLP Extractor (NER)
+            from .extractor import extract_required_entities_from_prompt
+            entidades_obrig = extract_required_entities_from_prompt(base_prompt, api_key)
+            
+            # Preparação de injestão comum
+            material_inj = ""
+            if custom_system_prompt:
+                material_inj += f"\n\nMATERIAL DE ORIGEM (FATOS):\n\"\"\"\n{texto_fatos[:10000]}\n\"\"\"\n"
+                if texto_modelo:
+                     material_inj += f"\nMATERIAL DE REFERÊNCIA (ESTILO):\n\"\"\"\n{texto_modelo[:8000]}\n\"\"\""
+            
+            # --- FLUXO SKELETON EXPANSION ---
+            if skeleton_expansion:
+                if status_callback: status_callback(f"⚙️ Mapeando Esqueleto do Tópico {i+1}...")
                 
-                # Monta o user prompt dinâmico pro sub_prompt
-                user_prompt = sprompt
+                req_esqueleto = (
+                    "GERAÇÃO DE ESQUELETO MESTRE (DRAFT):\n"
+                    "Crie um índice fático enumerado de 3 a 5 tópicos principais que você abordaria para resolver a seguinte instrução.\n"
+                    "Responda APENAS com os bullets (iniciando com '- '), não escreva o texto final.\n\n"
+                    f"INSTRUÇÃO:\n{base_prompt}"
+                )
                 
+                esqueleto_bruto = _chamar_api(client, modelo_geracao, system_prompt, req_esqueleto + material_inj)
+                linhas_esqueleto = [l.strip() for l in esqueleto_bruto.split('\n') if l.strip().startswith('-')]
+                if not linhas_esqueleto:
+                    linhas_esqueleto = [l.strip() for l in esqueleto_bruto.split('\n') if len(l.strip()) > 10][:4]
+                
+                for idx_linha, linha_index in enumerate(linhas_esqueleto):
+                    if status_callback: status_callback(f"⚙️ Deep Render ({idx_linha+1}/{len(linhas_esqueleto)}): {linha_index[:30]}...")
+                    
+                    user_prompt = (
+                        f"Você está expandindo UMA ÚNICA LINHA de um índice maior. Escreva de 3 a 5 parágrafos DENSOS "
+                        f"abortando OBRIGATÓRIA E EXCLUSIVAMENTE o seguinte tópico: '{linha_index}'.\n"
+                        "Proibido iniciar conclusões finais ou pular de assunto.\n\n"
+                        f"Contexto Macro da Seção: {base_prompt}"
+                    )
+                    
+                    if contexto_interno:
+                        user_prompt = (
+                            "CONTEXTO DE CONTINUIDADE (Acompanhe o fluxo do que você já escreveu logo acima):\n"
+                            f"{contexto_interno}\n--- FIM DO CONTEXTO ---\n\n" + user_prompt
+                        )
+                    
+                    # Retry
+                    tentativas = 0
+                    max_retries = 1
+                    texto_gerado_sub = ""
+                    while tentativas <= max_retries:
+                        texto_gerado_sub = _chamar_api(client, modelo_geracao, system_prompt, user_prompt + material_inj)
+                        falhas = [e for e in entidades_obrig if e.lower() not in texto_gerado_sub.lower()]
+                        if not falhas: break
+                        tentativas += 1
+                        user_prompt += f"\n\n[ERRO DE VALIDAÇÃO]: Inclua impreterivelmente estes fatos/autores: {falhas}."
+                        
+                    texto_gerado_acc.append(texto_gerado_sub)
+                    contexto_interno = texto_gerado_sub
+            
+            # --- FLUXO NORMAL OU COMUM MICRO-CHUNKING ---
+            else:
+                if status_callback: status_callback(f"⚙️ Gerando: {secao['titulo']} (Pedaço {idx_sub+1}/{len(sub_prompts)})...")
+                user_prompt = base_prompt
                 if contexto_interno:
                     user_prompt = (
-                        "CONTEXTO DE CONTINUIDADE (Acompanhe o fluxo do que você já escreveu logo acima):\\n"
-                        f"{contexto_interno}\\n"
-                        "--- FIM DO CONTEXTO DE CONTINUIDADE ---\\n\\n"
-                        f"{user_prompt}"
+                        "CONTEXTO DE CONTINUIDADE (Acompanhe o fluxo do que você já escreveu logo acima):\n"
+                        f"{contexto_interno}\n--- FIM DO CONTEXTO ---\n\n" + user_prompt
                     )
                 
-                if custom_system_prompt:
-                    user_prompt += f"\\n\\nMATERIAL DE ORIGEM (FATOS):\\n\"\"\"\\n{texto_fatos[:10000]}\\n\"\"\"\\n"
-                    if texto_modelo:
-                         user_prompt += f"\\nMATERIAL DE REFERÊNCIA (ESTILO):\\n\"\"\"\\n{texto_modelo[:8000]}\\n\"\"\""
-                
-                # NLP Extractor (NER)
-                entidades_obrig = extract_required_entities_from_prompt(sprompt, api_key)
-                
-                if entidades_obrig and status_callback:
-                    status_callback(f"🔒 Amarrando {len(entidades_obrig)} entidades exatas no retry-loop...")
-                
-                texto_gerado_sub = ""
                 tentativas = 0
                 max_retries = 2
-                
-                # Retry Validation Loop
+                texto_gerado_sub = ""
                 while tentativas <= max_retries:
-                    texto_gerado_sub = _chamar_api(client, modelo_geracao, system_prompt, user_prompt)
-                    falhas = []
-                    for e in entidades_obrig:
-                        if e.lower() not in texto_gerado_sub.lower():
-                            falhas.append(e)
-                    
-                    if not falhas:
-                        break # Sucesso absoluto
-                    
-                    # Força Loop Punitivo
+                    texto_gerado_sub = _chamar_api(client, modelo_geracao, system_prompt, user_prompt + material_inj)
+                    falhas = [e for e in entidades_obrig if e.lower() not in texto_gerado_sub.lower()]
+                    if not falhas: break
                     tentativas += 1
-                    if tentativas <= max_retries:
-                        user_prompt += f"\\n\\n[ERRO DE VALIDAÇÃO DO ALGORITMO]: Você ignorou os seguintes autores/leis obrigatórios que devia ter atrelado: {falhas}. Refaça o parágrafo garantindo a inserção."
-                
+                    user_prompt += f"\n\n[ERRO DE VALIDAÇÃO]: Inclua obrigatoriamente estes autores/leis no texto: {falhas}."
+                    
                 texto_gerado_acc.append(texto_gerado_sub)
-                
-                # O texto gerado agora vira contexto para o próximo sub_prompt!
                 contexto_interno = texto_gerado_sub
-                
-            texto_gerado = "\\n\\n".join(texto_gerado_acc)
-            
-        else:
-            # Fluxo normal de seção única
-            user_prompt = secao.get("prompt", "")
-            
-            # Injeção de contexto de continuidade (Memória de Sessão)
-            if contexto_anterior:
-                user_prompt = (
-                    "CONTEXTO DE CONTINUIDADE (Acompanhe o fluxo do que já foi escrito):\\n"
-                    f"{contexto_anterior}\\n"
-                    "--- FIM DO CONTEXTO DE CONTINUIDADE ---\\n\\n"
-                    f"{user_prompt}"
-                )
-            
-            # Se for um template customizado, injetamos o material-fonte no user_prompt
-            if custom_system_prompt:
-                user_prompt += f"\\n\\nMATERIAL DE ORIGEM (FATOS):\\n\"\"\"\\n{texto_fatos[:10000]}\\n\"\"\"\\n"
-                if texto_modelo:
-                     user_prompt += f"\\nMATERIAL DE REFERÊNCIA (ESTILO):\\n\"\"\"\\n{texto_modelo[:8000]}\\n\"\"\""
-    
-            if "[PLACEHOLDER]" in user_prompt:
-                texto_gerado = (
-                    f"[PLACEHOLDER] Geração da seção '{secao['titulo']}' ainda não implementada para este template. "
-                    f"O pipeline funcional está disponível no template 'Módulo Educacional'."
-                )
-            else:
-                texto_gerado = _chamar_api(client, modelo_geracao, system_prompt, user_prompt)
+
+        texto_gerado = "\n\n".join(texto_gerado_acc)
 
         resultados.append(GeneratorResult(
             secao_id=secao_id,
