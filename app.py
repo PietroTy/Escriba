@@ -438,17 +438,28 @@ if gerar_btn:
         # ─── Módulo 1: Ingestão ───────────────────────────
         progress_bar.progress(5, text="Módulo 1: Ingestão...")
         if arquivos:
-            texto_acumulado = []
+            texto_fatos_list = []
+            texto_modelo_list = []
             hashes = []
             metadados_gerais = []
             for idx, arg in enumerate(arquivos):
                 arg_bytes = arg.read()
                 i_res = ingest_document(arg_bytes, arg.name, status_callback=log_status)
-                texto_acumulado.append(f"\\n--- INÍCIO DO DOCUMENTO {idx+1}: {arg.name} ---\\n{i_res.texto}\\n--- FIM DO DOCUMENTO {idx+1} ---\\n")
+                
+                bloco = f"\n--- INÍCIO DO DOCUMENTO {idx+1}: {arg.name} ---\n{i_res.texto}\n--- FIM DO DOCUMENTO {idx+1} ---\n"
+                
+                nome_lower = arg.name.lower()
+                if "modelo" in nome_lower or "formato" in nome_lower or "tese" in nome_lower:
+                    texto_modelo_list.append(bloco)
+                else:
+                    texto_fatos_list.append(bloco)
+                    
                 hashes.append(i_res.hash_conteudo)
                 metadados_gerais.append(i_res.metadados)
             
-            texto_fonte = "\\n".join(texto_acumulado)
+            texto_fatos = "\n".join(texto_fatos_list)
+            texto_modelo = "\n".join(texto_modelo_list)
+            texto_fonte = texto_fatos + "\n" + texto_modelo
             hash_total = hashlib.sha256("".join(hashes).encode()).hexdigest()
             from modules.ingestor import IngestorResult
             ingestor_result = IngestorResult(
@@ -459,6 +470,8 @@ if gerar_btn:
             )
             cache_key = f"{hash_total}__{tema}__{modelo_selecionado}__{idioma}__{'-'.join(sorted(secoes_selecionadas))}__{incluir_markers}"
         else:
+            texto_fatos = ""
+            texto_modelo = ""
             texto_fonte = ""
             cache_key = f"no_file__{tema}__{modelo_selecionado}__{idioma}__{incluir_markers}"
             log_status("Sem arquivo — usando apenas o tema informado.")
@@ -496,7 +509,8 @@ if gerar_btn:
                 contexto_anterior = persistence.build_context(st.session_state["memoria_tese"], scope=scope_key)
 
             generator_results = generator.generate(
-                texto_fonte=texto_fonte,
+                texto_fatos=texto_fatos,
+                texto_modelo=texto_modelo,
                 template=template_atual,
                 secoes_selecionadas=secoes_selecionadas,
                 tema=tema,
@@ -515,7 +529,7 @@ if gerar_btn:
             progress_bar.progress(78, text="Módulo 4: Polimento e auditoria...")
             polish_results = polish(
                 secoes_geradas=generator_results,
-                texto_fonte=texto_fonte,
+                texto_fonte=texto_fatos,
                 api_key=api_key,
                 status_callback=log_status,
             )

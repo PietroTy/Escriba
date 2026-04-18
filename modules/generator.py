@@ -36,23 +36,34 @@ class GeneratorResult:
         self.cove_ativo = cove_ativo
 
 
-def _build_system_prompt(texto_fonte: str, idioma: str, tema: str, incluir_markers: bool = False) -> str:
+def _build_system_prompt(texto_fatos: str, texto_modelo: str, idioma: str, tema: str, incluir_markers: bool = False) -> str:
     """
     System prompt com instrução de fidelidade máxima ao material-fonte.
     Baseado na estratégia Anti-Alucinação do Blueprint Escriba v2.0.
     """
     prompt = (
         "Você é o Escriba — um assistente especialista em design educacional e criação de conteúdo acadêmico formal.\\n"
-        "Sua filosofia primária é FIDELIDADE: Nunca invente fatos ou adicione conhecimentos externos não fornecidos.\\n\\n"
+        "Sua filosofia primária é FIDELIDADE: Nunca invente fatos, autores ou dados que não estejam expressamente no material-fonte.\\n\\n"
         f"Idioma de saída: {idioma}.\\n"
         f"Tema geral sugerido: {tema}.\\n\\n"
-        "DIRETRIZ DE ESTILO / PERSONA OBRIGATÓRIA:\\n"
-        "Se houver algum arquivo/seção que pareça um texto formal pronto, uma tese de doutorado ou material narrativo em primeira pessoa listado nos documentos,"
-        " VOCÊ DEVE HACKEAR E COPIAR o tom de voz e estilo desse texto implacavelmente. Se o texto estiver na primeira pessoa do singular (ex: 'eu analiso', 'minha tese'),"
-        " você adotará exatamente a mesma persona. Copie o ritmo de mesclar fatos teóricos no meio da narrativa, não seja um robô engessado empilhando dados.\\n\\n"
-        "MATERIAL-FONTE / DOCUMENTOS (Base de Fatos e Base de Estilo):\\n"
+    )
+    
+    if texto_modelo and texto_modelo.strip():
+        prompt += (
+            "DIRETRIZ DE ESTILO / PERSONA OBRIGATÓRIA GLOBAL:\\n"
+            "VOCÊ FOI CONDICIONADO A HACKEAR E COPIAR o tom de voz e estilo narrativa do MATERIAL-FONTE DE MODELO (abaixo). "
+            "Sua escrita não pode soar como IA. Copie os conectivos, a 1ª pessoa do singular (se usada) e a emoção narrativa. "
+            "Todo o documento que gerar deve OBRIGATORIAMENTE ser permeado pelo fluxo estilístico deste modelo referencial:\\n"
+            "---\\n"
+            f"{texto_modelo[:10000]}\\n"  
+            "---\\n\\n"
+        )
+    
+    prompt += (
+        "MATERIAL-FONTE DE FATOS E PESQUISA (A SUA ÚNICA BASE GERADORA DE CONTEÚDO):\\n"
+        "Use APENAS os dados teóricos, nomes e fatos contidos neste arquivo:\\n"
         "---\\n"
-        f"{texto_fonte[:12000]}\\n"  # Limita para não estourar tokens
+        f"{texto_fatos[:12000]}\\n"  # Limita para não estourar tokens
         "---\\n\\n"
     )
 
@@ -84,7 +95,8 @@ def _chamar_api(client, modelo: str, system_prompt: str, user_prompt: str) -> st
 
 
 def generate(
-    texto_fonte: str,
+    texto_fatos: str,
+    texto_modelo: str,
     template: dict,
     secoes_selecionadas: list[str],
     tema: str,
@@ -100,7 +112,8 @@ def generate(
     Ponto de entrada principal do Generator.
 
     Args:
-        texto_fonte: Texto completo extraído pelo Ingestor.
+        texto_fatos: Fatos extraídos da pesquisa.
+        texto_modelo: Material-fonte para base de tom e voz.
         template: Dicionário do template JSON carregado.
         secoes_selecionadas: Lista de IDs de seções a gerar.
         tema: Tema geral informado pelo usuário.
@@ -125,7 +138,7 @@ def generate(
     if custom_system_prompt:
         system_prompt = custom_system_prompt
     else:
-        system_prompt = _build_system_prompt(texto_fonte, idioma, tema, incluir_markers=incluir_markers)
+        system_prompt = _build_system_prompt(texto_fatos, texto_modelo, idioma, tema, incluir_markers=incluir_markers)
     
     secoes_template = {s["id"]: s for s in template.get("secoes", [])}
     resultados = []
@@ -153,7 +166,9 @@ def generate(
         
         # Se for um template customizado, injetamos o material-fonte no user_prompt
         if custom_system_prompt:
-            user_prompt += f"\n\nMATERIAL DE ORIGEM (TEXTO_FONTE):\n\"\"\"\n{texto_fonte[:15000]}\n\"\"\""
+            user_prompt += f"\n\nMATERIAL DE ORIGEM (FATOS):\n\"\"\"\n{texto_fatos[:10000]}\n\"\"\"\n"
+            if texto_modelo:
+                 user_prompt += f"\nMATERIAL DE REFERÊNCIA (ESTILO):\n\"\"\"\n{texto_modelo[:8000]}\n\"\"\""
 
         if "[PLACEHOLDER]" in user_prompt:
             texto_gerado = (

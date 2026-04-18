@@ -118,8 +118,9 @@ def polish(
 
         audit_report = _double_check(client, secao.texto, texto_fonte, modelo_auditoria)
 
-        # Sanitização de LLM-speak e de cabeçalhos brutos da IA (Ex: "Aqui está...")
-        clean_text = re.sub(r'^(Aqui est[áa]|Abaixo est[áa]|Segue|Com base nos).*?:?\s*(\\n+|$)', '', secao.texto, flags=re.IGNORECASE|re.DOTALL)
+        # Sanitização de LLM-speak, de cabeçalhos brutos da IA e Alertas vazados
+        clean_text = re.sub(r'^(Aqui est[áa]|Abaixo est[áa]|Segue|Com base nos).*?:?\s*(\n+|$)', '', secao.texto, flags=re.IGNORECASE|re.DOTALL)
+        clean_text = re.sub(r'\[\s*ALERTA.*?\]', '', clean_text, flags=re.IGNORECASE|re.DOTALL)
         clean_text = clean_text.strip()
 
         resultados.append(PolishResult(
