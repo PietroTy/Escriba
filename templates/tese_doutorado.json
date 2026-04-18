@@ -1,7 +1,7 @@
 {
   "id": "tese_doutorado",
-  "nome": "Tese de Doutorado (Escrita por Chunks)",
-  "descricao": "Geração modular forçada pedaço por pedaço para expansão teórica densa e erradicação da 'Síndrome de Resumo'. Requer que você tenha enviado 2 arquivos: Fato da Pesquisa, e outro com 'Modelo/Tese' no nome para roubar o estilo.",
+  "nome": "Tese de Doutorado (Escrita por Chunks Iterativos)",
+  "descricao": "Geração modular forçada pedaço por pedaço para expansão teórica densa e erradicação da 'Síndrome de Resumo'. Utiliza Micro-Chunking interno para expandir cada seção.",
   "requisitos": "Escriba precisa de: 1 arquivo base de Fatos (ex: artigo atual) e 1 arquivo com 'Modelo', 'Formato' ou 'Tese' no nome para guiar o ritmo de escrita.",
   "norma": "ABNT / Acadêmica / Pós-Graduação",
   "prioridade": 2,
@@ -11,28 +11,41 @@
       "numero": 1,
       "titulo": "1.1 Apresentação do Tema",
       "obrigatorio": true,
-      "prompt": "Gere NO MÍNIMO entre 4 e 6 parágrafos longos desenvolvendo, baseando-se restritivamente na base de fatos fornecida, a apresentação do objeto de estudo (ex: o contexto histórico e macro em que se insere antes de afunilar no problema geográfico local abordado). Não faça 'Name-Dropping' solto. Não pule etapas. Emule ativamente a primeira pessoa do singular se a sua diretiva base de formatação te disser para fazer isso."
+      "sub_prompts": [
+        "Escreva 3 parágrafos longos ESTRITAMENTE focados na apresentação histórica e macro-social do tema/problema principal utilizando os dados da base de Fatos. Mantenha o formato da primeira pessoa do singular se a sua diretiva base de formatação pedir.",
+        "Escreva de 2 a 3 parágrafos narrativos afunilando do contexto macro explicado anteriormente para a realidade e localidade geográfica exata tratada na pesquisa (ex: bioma, estado ou município). Aplique a Template Retórica: apresente as políticas públicas e demonstre a implicação fática da exclusão no local."
+      ]
     },
     {
       "id": "trajetoria_pesquisador",
       "numero": 2,
       "titulo": "1.2 Trajetória do(a) Pesquisador(a)",
       "obrigatorio": true,
-      "prompt": "Esta é a seção estritamente subjetiva. Extraia qualquer contexto dos fatos de 'porquê' o autor pesquisou isso ou quem ele é, e mescle fortemente copiando o tom exato do material de formato (que geralmente usa a primeira pessoa, relata vivências docentes e descreve angústias). Escreva com densidade (mínimo de 3 parágrafos filosóficos e reflexivos conectando o professor com o objeto de estudo). Emule a voz do Arquivo Modelo de forma integral."
+      "sub_prompts": [
+        "Esta é uma seção fortemente autobiográfica. Escreva pelo menos 3 parágrafos narrando as inquietações profissionais e as bases da relação do professor/autor com o seu objeto de estudo. Copie rigorosamente o tom de confidência e observação empírica (se presente) no material modelo de formatação.",
+        "Aprofunde a narrativa com mais 2 ou 3 parágrafos detalhando as dores ou falhas no sistema atual (segundo os fatos) percebidas através dessa trajetória descrita."
+      ]
     },
     {
       "id": "revisao_bibliografica_profunda",
       "numero": 3,
       "titulo": "1.3 Revisão Bibliográfica Preliminar",
       "obrigatorio": true,
-      "prompt": "NÃO COMPRIMA. Para OBRIGATORIAMENTE CADA AUTOR individual ou teoria mencionada na base de Fatos, escreva pelo menos TRÊS a QUATRO parágrafos densos dissecando a sua lente teórica e a correlacionando com o fenômeno ou problema da tese abordado em tela. \n\nPROIBIDO EXTREMAMENTE: Fazer 'Name-dropping' (Citar o autor Apple num parágrafo e no seguinte pular para Sacristán, isso é crime tipificado nesta tarefa). \n\nCrie uma expansão profunda. A cadência e a conexão de ideias deve imitar a cadência narrativa e investigativa do Material de Modelo aprovado, embora usando os referenciais modernos (dos fatos). Mantenha a diretriz global narrativa em 1º pessoa para ancorar e costurar os autores e se apossar do corpo do texto reflexivamente."
+      "sub_prompts": [
+        "Extraia o PRIMEIRO autor base ou grupo focal contidos nos fatos. Escreva cerca de 3 a 4 parágrafos dissecando e ancorando essa teoria aos problemas diários relatados na trajetória ou nos fatos. Estrutura forçada por parágrafo: 1) Apresentar o axioma do autor; 2) Discutir a implicação na realidade de campo; 3) Fazer elo narrativo autoral.",
+        "Extraia O PRÓXIMO conjunto de autores (ex: o segundo pilar teórico) da base de fatos. Escreva mais 3 ou 4 parágrafos focados SOMENTE nessa lente, de forma contígua, desenvolvendo o diálogo entre as teorias emancipadoras e o cenário escolar ou público em questão. Proibido fazer name dropping (ex: saltar freneticamente de um autor pra outro).",
+        "Por fim, dedique mais 3 parágrafos a amarrar o último grande eixo teórico da fundação (leis ou o terceiro grupo de autores mencionados nos Fatos). Continue ditando o ritmo reflexivo na voz do Pesquisador."
+      ]
     },
     {
       "id": "metodologia_proposta",
       "numero": 4,
       "titulo": "1.4 Considerações Metodológicas",
       "obrigatorio": true,
-      "prompt": "Retome a voz narrativa da primeira pessoa (modelo) e aborde as diretrizes de campo que o autor utilizará mencionadas nos Fatos. Crie parágrafos robustos argumentando em prol destas escolhas em face dos autores que as endossam (mínimo de 500 palavras)."
+      "sub_prompts": [
+        "Retome a voz narrativa autobiográfica (modelo) e redija as diretrizes de campo que o autor utilizará mencionadas nos Fatos. Crie 3 parágrafos robustos que fundamentam essa escolha.",
+        "Finalize com 2 parágrafos detalhando os próximos passos operacionais e como o referencial listado sustenta metodologicamente essas etapas."
+      ]
     }
   ],
   "exportacao": {

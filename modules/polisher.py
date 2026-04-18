@@ -121,6 +121,7 @@ def polish(
         # Sanitização de LLM-speak, de cabeçalhos brutos da IA e Alertas vazados
         clean_text = re.sub(r'^(Aqui est[áa]|Abaixo est[áa]|Segue|Com base nos).*?:?\s*(\n+|$)', '', secao.texto, flags=re.IGNORECASE|re.DOTALL)
         clean_text = re.sub(r'\[\s*ALERTA.*?\]', '', clean_text, flags=re.IGNORECASE|re.DOTALL)
+        clean_text = re.sub(r'\[\s*Ref:.*?\]', '', clean_text, flags=re.IGNORECASE|re.DOTALL)
         clean_text = clean_text.strip()
 
         resultados.append(PolishResult(

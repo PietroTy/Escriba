@@ -72,8 +72,8 @@ def _build_system_prompt(texto_fatos: str, texto_modelo: str, idioma: str, tema:
             "DIRETRIZ DE FLUXO E MÍDIA: Intercale os fatos ao longo de todo o texto suavemente. Sugira pontos de interatividade usando marcadores "
             "como [ VÍDEO ], [ ÁUDIO ] ou [ TABELA ] apenas quando fizer sentido.\\n\\n"
         )
+        )
 
-    prompt += "Ao final de cada seção gerada, inclua uma nota de rodapé discreta no formato: [Ref: baseado no material-fonte fornecido]"
     return prompt
 
 
@@ -152,31 +152,65 @@ def generate(
         if status_callback:
             status_callback(f"⚙️ Gerando: {secao['titulo']} ({i+1}/{total})...")
 
-        # Constrói o user prompt
-        user_prompt = secao["prompt"]
-        
-        # Injeção de contexto de continuidade (Memória de Sessão)
-        if contexto_anterior:
-            user_prompt = (
-                "CONTEXTO DE CONTINUIDADE (Acompanhe o fluxo do que já foi escrito):\n"
-                f"{contexto_anterior}\n"
-                "--- FIM DO CONTEXTO DE CONTINUIDADE ---\n\n"
-                f"{user_prompt}"
-            )
-        
-        # Se for um template customizado, injetamos o material-fonte no user_prompt
-        if custom_system_prompt:
-            user_prompt += f"\n\nMATERIAL DE ORIGEM (FATOS):\n\"\"\"\n{texto_fatos[:10000]}\n\"\"\"\n"
-            if texto_modelo:
-                 user_prompt += f"\nMATERIAL DE REFERÊNCIA (ESTILO):\n\"\"\"\n{texto_modelo[:8000]}\n\"\"\""
-
-        if "[PLACEHOLDER]" in user_prompt:
-            texto_gerado = (
-                f"[PLACEHOLDER] Geração da seção '{secao['titulo']}' ainda não implementada para este template. "
-                f"O pipeline funcional está disponível no template 'Módulo Educacional'."
-            )
+        # Suporte para sub-prompts (Micro-chunking)
+        sub_prompts = secao.get("sub_prompts")
+        if sub_prompts and isinstance(sub_prompts, list):
+            texto_gerado_acc = []
+            contexto_interno = contexto_anterior or ""
+            for idx_sub, sprompt in enumerate(sub_prompts):
+                if status_callback:
+                    status_callback(f"⚙️ Gerando: {secao['titulo']} (Sub-tópico {idx_sub+1}/{len(sub_prompts)})...")
+                
+                # Monta o user prompt dinâmico pro sub_prompt
+                user_prompt = sprompt
+                
+                if contexto_interno:
+                    user_prompt = (
+                        "CONTEXTO DE CONTINUIDADE (Acompanhe o fluxo do que você já escreveu logo acima):\\n"
+                        f"{contexto_interno}\\n"
+                        "--- FIM DO CONTEXTO DE CONTINUIDADE ---\\n\\n"
+                        f"{user_prompt}"
+                    )
+                
+                if custom_system_prompt:
+                    user_prompt += f"\\n\\nMATERIAL DE ORIGEM (FATOS):\\n\"\"\"\\n{texto_fatos[:10000]}\\n\"\"\"\\n"
+                    if texto_modelo:
+                         user_prompt += f"\\nMATERIAL DE REFERÊNCIA (ESTILO):\\n\"\"\"\\n{texto_modelo[:8000]}\\n\"\"\""
+                         
+                texto_gerado_sub = _chamar_api(client, modelo_geracao, system_prompt, user_prompt)
+                texto_gerado_acc.append(texto_gerado_sub)
+                
+                # O texto gerado agora vira contexto para o próximo sub_prompt!
+                contexto_interno = texto_gerado_sub
+                
+            texto_gerado = "\\n\\n".join(texto_gerado_acc)
+            
         else:
-            texto_gerado = _chamar_api(client, modelo_geracao, system_prompt, user_prompt)
+            # Fluxo normal de seção única
+            user_prompt = secao.get("prompt", "")
+            
+            # Injeção de contexto de continuidade (Memória de Sessão)
+            if contexto_anterior:
+                user_prompt = (
+                    "CONTEXTO DE CONTINUIDADE (Acompanhe o fluxo do que já foi escrito):\\n"
+                    f"{contexto_anterior}\\n"
+                    "--- FIM DO CONTEXTO DE CONTINUIDADE ---\\n\\n"
+                    f"{user_prompt}"
+                )
+            
+            # Se for um template customizado, injetamos o material-fonte no user_prompt
+            if custom_system_prompt:
+                user_prompt += f"\\n\\nMATERIAL DE ORIGEM (FATOS):\\n\"\"\"\\n{texto_fatos[:10000]}\\n\"\"\"\\n"
+                if texto_modelo:
+                     user_prompt += f"\\nMATERIAL DE REFERÊNCIA (ESTILO):\\n\"\"\"\\n{texto_modelo[:8000]}\\n\"\"\""
+    
+            if "[PLACEHOLDER]" in user_prompt:
+                texto_gerado = (
+                    f"[PLACEHOLDER] Geração da seção '{secao['titulo']}' ainda não implementada para este template. "
+                    f"O pipeline funcional está disponível no template 'Módulo Educacional'."
+                )
+            else:
+                texto_gerado = _chamar_api(client, modelo_geracao, system_prompt, user_prompt)
 
         resultados.append(GeneratorResult(
             secao_id=secao_id,
