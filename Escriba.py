@@ -103,7 +103,7 @@ def escriba_ui():
     if "cache" not in st.session_state:
         st.session_state["cache"] = {}
 
-    arquivo = st.file_uploader("Envie um arquivo (.pdf, .txt, .docx)", type=["pdf", "txt", "docx"], key="arquivo")
+    arquivos = st.file_uploader("Envie os arquivos (.pdf, .txt, .docx)", type=["pdf", "txt", "docx"], accept_multiple_files=True, key="arquivo")
 
     with st.form("generate_form"):
         st.header("Parâmetros")
@@ -128,17 +128,20 @@ def escriba_ui():
     revisar_pdf_btn = st.button("Revisar ortografia (usar PDF)")
 
     if revisar_pdf_btn:
-        if not arquivo:
+        if not arquivos:
             st.error("Envie um arquivo PDF para revisão.")
         else:
-            arquivo.seek(0)
-            ext = arquivo.name.split(".")[-1].lower()
-            if ext != "pdf":
-                st.error("A revisão via PDF exige um arquivo .pdf. Para outros formatos, use a revisão de texto.")
-            else:
-                file_bytes = arquivo.read()
-                file_like = BytesIO(file_bytes)
-                texto_pdf = ler_pdf(file_like)
+            textos_pdf = []
+            for arq in arquivos:
+                arq.seek(0)
+                ext = arq.name.split(".")[-1].lower()
+                if ext != "pdf":
+                    st.error(f"A revisão via PDF exige arquivos .pdf. Arquivo {arq.name} ignorado.")
+                else:
+                    file_bytes = arq.read()
+                    file_like = BytesIO(file_bytes)
+                    textos_pdf.append(ler_pdf(file_like))
+            texto_pdf = "\\n".join(textos_pdf)
                 preprompt = criar_preprompt(f"Tema geral: {tema_geral}\n\n{texto_pdf}", idioma)
                 revisado = revisar_texto(texto_pdf, preprompt)
                 st.success("Revisão do PDF concluída.")
@@ -151,26 +154,31 @@ def escriba_ui():
                 )
 
     if 'gerar_btn' in locals() and gerar_btn:
-        if not tema_geral and not arquivo:
-            st.error("Preencha a descrição do tema geral ou envie um arquivo antes de processar.")
+        if not tema_geral and not arquivos:
+            st.error("Preencha a descrição do tema geral ou envie os arquivos antes de processar.")
         else:
-            if arquivo:
-                arquivo.seek(0)
-                file_bytes = arquivo.read()
-                file_hash = hashlib.sha256(file_bytes).hexdigest()
-                file_like = BytesIO(file_bytes)
-                ext = arquivo.name.split(".")[-1].lower()
-                if ext == "pdf":
-                    texto_origem = ler_pdf(file_like)
-                elif ext == "txt":
-                    texto_origem = ler_txt(file_like)
-                elif ext == "docx":
-                    texto_origem = ler_docx(file_like)
-                else:
-                    st.error("Formato de arquivo não suportado.")
-                    st.stop()
+            if arquivos:
+                textos = []
+                hashes = []
+                for arq in arquivos:
+                    arq.seek(0)
+                    file_bytes = arq.read()
+                    hashes.append(hashlib.sha256(file_bytes).hexdigest())
+                    file_like = BytesIO(file_bytes)
+                    ext = arq.name.split(".")[-1].lower()
+                    if ext == "pdf":
+                        textos.append(ler_pdf(file_like))
+                    elif ext == "txt":
+                        textos.append(ler_txt(file_like))
+                    elif ext == "docx":
+                        textos.append(ler_docx(file_like))
+                    else:
+                        st.warning(f"Formato de arquivo não suportado: {arq.name}")
+                texto_origem = "\\n".join(textos)
+                file_hash = hashlib.sha256("".join(hashes).encode()).hexdigest()
             else:
                 texto_origem = ""
+                file_hash = "no_file"
 
             preprompt = criar_preprompt(f"Tema geral: {tema_geral}\n\n{texto_origem}", idioma)
 
@@ -201,7 +209,7 @@ def escriba_ui():
                         ("F" if gerar_referencias else "-"),
                     ]
                     opts_tag = "".join(opts)
-                cache_key = f"{file_hash if arquivo else 'no_file'}__{tema_geral.strip()}__{idioma}__{opts_tag}"
+                cache_key = f"{file_hash}__{tema_geral.strip()}__{idioma}__{opts_tag}"
 
                 if cache_key in st.session_state["cache"]:
                     st.success("Conteúdo carregado do cache.")

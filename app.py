@@ -9,8 +9,12 @@ Pipeline:
 import streamlit as st
 import json
 
+import sys
+
 import config
 from modules import ingestor, comprehension, generator, polisher, exporter, persistence
+import hashlib
+
 
 # Inicializa diretórios
 persistence.ensure_dir()
@@ -321,14 +325,18 @@ with col_esq:
     st.warning("**Zero Alucinação**: O Escriba foi projetado para seguir **estritamente** o seu material de referência. O que não estiver na fonte, não estará no texto final.")
 
     st.markdown("#### Documento Fonte")
-    arquivo = st.file_uploader(
-        "Envie um arquivo (PDF, DOCX ou TXT)",
+    arquivos = st.file_uploader(
+        "Envie um ou mais arquivos (PDF, DOCX ou TXT)",
         type=["pdf", "txt", "docx"],
+        accept_multiple_files=True,
         key="arquivo_upload",
         label_visibility="collapsed",
     )
-    if arquivo:
-        st.success(f"**{arquivo.name}** carregado")
+    if arquivos:
+        if len(arquivos) == 1:
+            st.success(f"**{arquivos[0].name}** carregado")
+        else:
+            st.success(f"**{len(arquivos)}** arquivos carregados")
 
     st.divider()
 
@@ -405,8 +413,8 @@ with col_dir:
 # Execução do Pipeline
 # ──────────────────────────────────────────────────────────────────
 if gerar_btn:
-    if not tema and not arquivo:
-        st.error("Informe o tema geral ou envie um arquivo para processar.")
+    if not tema and not arquivos:
+        st.error("Informe o tema geral ou envie pelo menos um arquivo para processar.")
         st.stop()
     if not secoes_selecionadas:
         st.error("Selecione ao menos uma seção para gerar.")
@@ -429,18 +437,34 @@ if gerar_btn:
     try:
         # ─── Módulo 1: Ingestão ───────────────────────────
         progress_bar.progress(5, text="Módulo 1: Ingestão...")
-        if arquivo:
-            file_bytes = arquivo.read()
-            ingestor_result = ingest_document(file_bytes, arquivo.name, status_callback=log_status)
-            texto_fonte = ingestor_result.texto
-            cache_key = f"{ingestor_result.hash_conteudo}__{tema}__{modelo_selecionado}__{idioma}__{'-'.join(sorted(secoes_selecionadas))}__{incluir_markers}"
+        if arquivos:
+            texto_acumulado = []
+            hashes = []
+            metadados_gerais = []
+            for idx, arg in enumerate(arquivos):
+                arg_bytes = arg.read()
+                i_res = ingest_document(arg_bytes, arg.name, status_callback=log_status)
+                texto_acumulado.append(f"\\n--- INÍCIO DO DOCUMENTO {idx+1}: {arg.name} ---\\n{i_res.texto}\\n--- FIM DO DOCUMENTO {idx+1} ---\\n")
+                hashes.append(i_res.hash_conteudo)
+                metadados_gerais.append(i_res.metadados)
+            
+            texto_fonte = "\\n".join(texto_acumulado)
+            hash_total = hashlib.sha256("".join(hashes).encode()).hexdigest()
+            from modules.ingestor import IngestorResult
+            ingestor_result = IngestorResult(
+                texto=texto_fonte,
+                hash_conteudo=hash_total,
+                metadados={"arquivos": metadados_gerais},
+                formato="MULTIPLO"
+            )
+            cache_key = f"{hash_total}__{tema}__{modelo_selecionado}__{idioma}__{'-'.join(sorted(secoes_selecionadas))}__{incluir_markers}"
         else:
             texto_fonte = ""
             cache_key = f"no_file__{tema}__{modelo_selecionado}__{idioma}__{incluir_markers}"
             log_status("Sem arquivo — usando apenas o tema informado.")
             log_status("Módulo 1 concluído")
 
-        st.session_state["ingestor_result"] = ingestor_result if arquivo else None
+        st.session_state["ingestor_result"] = ingestor_result if arquivos else None
         progress_bar.progress(20, text="Módulo 1 concluído")
 
         # Cache check
