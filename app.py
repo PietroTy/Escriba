@@ -15,7 +15,6 @@ import config
 from modules import ingestor, comprehension, generator, polisher, exporter, persistence
 import hashlib
 
-
 # Inicializa diretórios
 persistence.ensure_dir()
 from modules.ingestor import ingest_document
