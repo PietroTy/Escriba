@@ -39,33 +39,31 @@ class GeneratorResult:
 def _build_system_prompt(texto_fatos: str, texto_modelo: str, idioma: str, tema: str, incluir_markers: bool = False) -> str:
     """
     System prompt com instrução de fidelidade máxima ao material-fonte.
-    Baseado na estratégia Anti-Alucinação do Blueprint Escriba v2.0.
+    Baseado na estratégia Anti-Alucinação do Blueprint Escriba v6.0.
     """
     prompt = (
-        "Você é o Escriba — um compilador rígido de design educacional e conteúdo acadêmico formal.\\n"
-        "REGRA DE INFERÊNCIA ZERO: É peremptoriamente proibido atuar como coautor. É estritamente proibido inferir causas ou correlacionar marcos temporais, políticos ou históricos que não estejam expressos no payload. Você atua APENAS como COMPILADOR.\\n\\n"
-        f"Idioma de saída: {idioma}.\\n"
-        f"Tema geral sugerido: {tema}.\\n\\n"
+        "Você é o Escriba — um compilador rígido de design educacional e conteúdo acadêmico formal.\n"
+        "REGRA DE INFERÊNCIA ZERO: É peremptoriamente proibido atuar como coautor. É estritamente proibido inferir causas ou correlacionar marcos temporais, políticos ou históricos que não estejam expressos no payload. Você atua APENAS como COMPILADOR.\n\n"
+        f"Idioma de saída: {idioma}.\n"
+        f"Tema geral sugerido: {tema}.\n\n"
     )
     
     prompt += (
-        "DIRETRIZ ESTRUTURAL E VERBATIM (FEW-SHOT):\\n"
-        "Para garantir que você não resuma conhecimentos de forma abstrata, cada parágrafo gerado deve conter, obrigatoriamente, "
-        "ao menos uma citação direta do material-fonte delimitada por aspas duplas, transcrevendo exatamente as palavras da fonte.\\n"
-        "Exemplo de Sáida Esperada:\\n"
-        "> Ao analisarmos as políticas atuais, fica claro que a imposição do currículo gera deficiências locais, visto que a EJA é, na fonte, \"um processo contínuo de alienação na raiz do município\".\\n\\n"
+        "DIRETRIZ ESTRUTURAL E VERBATIM (REGRAS DE CONTROLE):\n"
+        "- Regra 1: Toda afirmação extraída de documentos oficiais ou leis DEVE citar a fonte no mesmo período (ex: 'conforme o PNE 2026...').\n"
+        "- Regra 2: Nenhuma conclusão avaliativa (ex: 'a inclusão permanece incipiente') pode ser gerada sem ser imediatamente seguida da citação do autor ou dado do texto-fonte que a baseia.\n"
+        "- Para garantir que você não resuma conhecimentos de forma abstrata, cada parágrafo fático deve conter ao menos uma citação direta transcrita exatamente do material-fonte delimitada por aspas duplas.\n\n"
     )
     
     if texto_modelo and texto_modelo.strip():
         prompt += (
-            "DIRETRIZ DE ESTILO / PERSONA OBRIGATÓRIA GLOBAL:\\n"
-            "VOCÊ FOI CONDICIONADO A HACKEAR E COPIAR o tom de voz e estilo narrativa do MATERIAL-FONTE DE MODELO (abaixo). "
-            "Sua escrita não pode soar como IA. Assuma a voz confessional e vivencial (O EU PESQUISADOR) homogeneamente do "
-            "primeiro ao último parágrafo, sem transições abruptas para jargão impessoal. Se a base usar 1ª Pessoa, o documento "
-            "TODO DEVE SER EM 1ª PESSOA, incluindo introduções de contexto global.\\n"
-            "---\\n"
-            f"{texto_modelo[:10000]}\\n"  
-            "---\\n\\n"
+            "DIRETRIZ DE ESTILO / PERSONA (TRAVA BIOGRÁFICA STRICTA):\n"
+            "1. Você deve escrever na primeira pessoa do singular (ex: 'analiso', 'compreendo') acompanhando o tom de voz do MATERIAL-FONTE DE MODELO (abaixo).\n"
+            "2. É ESTRITAMENTE PROIBIDO inventar cargos ('como supervisor'), experiências profissionais, anedotas, metáforas parnasianas ou simular falas de professores/terceiros.\n"
+            "3. Sua 'voz' deve se restringir exclusivamente a relatar ou transacionar os fatos e conceitos teóricos APRESENTADOS NO PAYLOAD. NUNCA assuma um Roleplay criativo.\n"
+            "---\n"
+            f"{texto_modelo[:10000]}\n"  
+            "---\n\n"
         )
     
     prompt += (
@@ -148,7 +146,7 @@ def generate(
     else:
         system_prompt = _build_system_prompt(texto_fatos, texto_modelo, idioma, tema, incluir_markers=incluir_markers)
     
-    from .extractor import extract_required_entities_from_prompt
+    from .extractor import extract_required_entities_from_prompt, filter_context_for_prompt, extract_mandatory_keys_from_context
     
     secoes_template = {s["id"]: s for s in template.get("secoes", [])}
     resultados = []
@@ -170,14 +168,21 @@ def generate(
         for idx_sub, base_prompt in enumerate(sub_prompts):
             if not base_prompt: continue
             
-            # NLP Extractor (NER)
-            from .extractor import extract_required_entities_from_prompt
-            entidades_obrig = extract_required_entities_from_prompt(base_prompt, api_key)
+            # --- CHUNKING SEMÂNTICO (Oculta trajetórias pessoais no micro ou macro) ---
+            texto_fatos_filtrado = filter_context_for_prompt(texto_fatos, base_prompt, api_key, status_callback)
             
-            # Preparação de injestão comum
+            # NLP Extractor (NER - Obrigando termos)
+            ent_prompt = extract_required_entities_from_prompt(base_prompt, api_key)
+            ent_contexto = extract_mandatory_keys_from_context(texto_fatos_filtrado, api_key)
+            entidades_obrig = list(set(ent_prompt + ent_contexto)) # União única das travas
+            
+            # Preparação de injestão comum usando o Filtered Context
             material_inj = ""
-            if custom_system_prompt:
-                material_inj += f"\n\nMATERIAL DE ORIGEM (FATOS):\n\"\"\"\n{texto_fatos[:10000]}\n\"\"\"\n"
+            if not custom_system_prompt:
+                # Substituímos as tags dinâmicas no prompt aqui, pois _build override o original
+                material_inj += f"\n\nMATERIAL DE ORIGEM (FATOS RECORTADOS PARA ESTA SEÇÃO):\n\"\"\"\n{texto_fatos_filtrado}\n\"\"\"\n"
+            else:
+                material_inj += f"\n\nMATERIAL DE ORIGEM (FATOS RECORTADOS PARA ESTA SEÇÃO):\n\"\"\"\n{texto_fatos_filtrado}\n\"\"\"\n"
                 if texto_modelo:
                      material_inj += f"\nMATERIAL DE REFERÊNCIA (ESTILO):\n\"\"\"\n{texto_modelo[:8000]}\n\"\"\""
             
@@ -213,16 +218,18 @@ def generate(
                             f"{contexto_interno}\n--- FIM DO CONTEXTO ---\n\n" + user_prompt
                         )
                     
-                    # Retry
+                    # Retry Anti-Omissão
                     tentativas = 0
-                    max_retries = 1
+                    max_retries = 2
                     texto_gerado_sub = ""
                     while tentativas <= max_retries:
                         texto_gerado_sub = _chamar_api(client, modelo_geracao, system_prompt, user_prompt + material_inj)
-                        falhas = [e for e in entidades_obrig if e.lower() not in texto_gerado_sub.lower()]
+                        falhas = [e for e in entidades_obrig if str(e).lower() not in texto_gerado_sub.lower()]
                         if not falhas: break
+                        if status_callback and falhas:
+                            status_callback(f"⚠️ Omissão detectada. Reforçando chaves ({tentativas+1}/{max_retries}): {', '.join(falhas)[:30]}...")
                         tentativas += 1
-                        user_prompt += f"\n\n[ERRO DE VALIDAÇÃO]: Inclua impreterivelmente estes fatos/autores: {falhas}."
+                        user_prompt += f"\n\n[ALERTA ANTI-OMISSÃO]: Você DELETOU informações vitais. Refaça o texto INCLUINDO e ABORDANDO essas entidades ou números: {falhas}."
                         
                     texto_gerado_acc.append(texto_gerado_sub)
                     contexto_interno = texto_gerado_sub
@@ -242,10 +249,12 @@ def generate(
                 texto_gerado_sub = ""
                 while tentativas <= max_retries:
                     texto_gerado_sub = _chamar_api(client, modelo_geracao, system_prompt, user_prompt + material_inj)
-                    falhas = [e for e in entidades_obrig if e.lower() not in texto_gerado_sub.lower()]
+                    falhas = [e for e in entidades_obrig if str(e).lower() not in texto_gerado_sub.lower()]
                     if not falhas: break
+                    if status_callback and falhas:
+                            status_callback(f"⚠️ Omissão detectada. Reforçando chaves ({tentativas+1}/{max_retries}): {', '.join(falhas)[:30]}...")
                     tentativas += 1
-                    user_prompt += f"\n\n[ERRO DE VALIDAÇÃO]: Inclua obrigatoriamente estes autores/leis no texto: {falhas}."
+                    user_prompt += f"\n\n[ALERTA ANTI-OMISSÃO]: Você DELETOU informações vitais. Refaça o texto INCLUINDO e ABORDANDO estas entidades ou números: {falhas}."
                     
                 texto_gerado_acc.append(texto_gerado_sub)
                 contexto_interno = texto_gerado_sub
