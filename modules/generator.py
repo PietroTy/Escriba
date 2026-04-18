@@ -42,18 +42,25 @@ def _build_system_prompt(texto_fatos: str, texto_modelo: str, idioma: str, tema:
     Baseado na estratégia Anti-Alucinação do Blueprint Escriba v2.0.
     """
     prompt = (
-        "Você é o Escriba — um assistente especialista em design educacional e criação de conteúdo acadêmico formal.\\n"
-        "Sua filosofia primária é FIDELIDADE: Nunca invente fatos, autores ou dados que não estejam expressamente no material-fonte.\\n\\n"
+        "Você é o Escriba — um compilador rígido de design educacional e conteúdo acadêmico formal.\\n"
+        "REGRA DE INFERÊNCIA ZERO: É peremptoriamente proibido atuar como coautor. É estritamente proibido inferir causas ou correlacionar marcos temporais, políticos ou históricos que não estejam expressos no payload. Você atua APENAS como COMPILADOR.\\n\\n"
         f"Idioma de saída: {idioma}.\\n"
         f"Tema geral sugerido: {tema}.\\n\\n"
+    )
+    
+    prompt += (
+        "DIRETRIZ ESTRUTURAL E VERBATIM (FEW-SHOT):\\n"
+        "Para garantir que você não resuma conhecimentos de forma abstrata, cada parágrafo gerado deve conter, obrigatoriamente, "
+        "ao menos uma citação direta do material-fonte delimitada por aspas duplas, transcrevendo exatamente as palavras da fonte.\\n"
+        "Exemplo de Sáida Esperada:\\n"
+        "> Ao analisarmos as políticas atuais, fica claro que a imposição do currículo gera deficiências locais, visto que a EJA é, na fonte, \"um processo contínuo de alienação na raiz do município\".\\n\\n"
     )
     
     if texto_modelo and texto_modelo.strip():
         prompt += (
             "DIRETRIZ DE ESTILO / PERSONA OBRIGATÓRIA GLOBAL:\\n"
             "VOCÊ FOI CONDICIONADO A HACKEAR E COPIAR o tom de voz e estilo narrativa do MATERIAL-FONTE DE MODELO (abaixo). "
-            "Sua escrita não pode soar como IA. Copie os conectivos, a 1ª pessoa do singular (se usada) e a emoção narrativa. "
-            "Todo o documento que gerar deve OBRIGATORIAMENTE ser permeado pelo fluxo estilístico deste modelo referencial:\\n"
+            "Sua escrita não pode soar como IA. Copie os conectivos, a 1ª pessoa do singular (se usada). "
             "---\\n"
             f"{texto_modelo[:10000]}\\n"  
             "---\\n\\n"
@@ -139,6 +146,8 @@ def generate(
     else:
         system_prompt = _build_system_prompt(texto_fatos, texto_modelo, idioma, tema, incluir_markers=incluir_markers)
     
+    from .extractor import extract_required_entities_from_prompt
+    
     secoes_template = {s["id"]: s for s in template.get("secoes", [])}
     resultados = []
     total = len(secoes_selecionadas)
@@ -175,8 +184,33 @@ def generate(
                     user_prompt += f"\\n\\nMATERIAL DE ORIGEM (FATOS):\\n\"\"\"\\n{texto_fatos[:10000]}\\n\"\"\"\\n"
                     if texto_modelo:
                          user_prompt += f"\\nMATERIAL DE REFERÊNCIA (ESTILO):\\n\"\"\"\\n{texto_modelo[:8000]}\\n\"\"\""
-                         
-                texto_gerado_sub = _chamar_api(client, modelo_geracao, system_prompt, user_prompt)
+                
+                # NLP Extractor (NER)
+                entidades_obrig = extract_required_entities_from_prompt(sprompt, api_key)
+                
+                if entidades_obrig and status_callback:
+                    status_callback(f"🔒 Amarrando {len(entidades_obrig)} entidades exatas no retry-loop...")
+                
+                texto_gerado_sub = ""
+                tentativas = 0
+                max_retries = 2
+                
+                # Retry Validation Loop
+                while tentativas <= max_retries:
+                    texto_gerado_sub = _chamar_api(client, modelo_geracao, system_prompt, user_prompt)
+                    falhas = []
+                    for e in entidades_obrig:
+                        if e.lower() not in texto_gerado_sub.lower():
+                            falhas.append(e)
+                    
+                    if not falhas:
+                        break # Sucesso absoluto
+                    
+                    # Força Loop Punitivo
+                    tentativas += 1
+                    if tentativas <= max_retries:
+                        user_prompt += f"\\n\\n[ERRO DE VALIDAÇÃO DO ALGORITMO]: Você ignorou os seguintes autores/leis obrigatórios que devia ter atrelado: {falhas}. Refaça o parágrafo garantindo a inserção."
+                
                 texto_gerado_acc.append(texto_gerado_sub)
                 
                 # O texto gerado agora vira contexto para o próximo sub_prompt!

@@ -118,10 +118,14 @@ def polish(
 
         audit_report = _double_check(client, secao.texto, texto_fonte, modelo_auditoria)
 
-        # Sanitização de LLM-speak, de cabeçalhos brutos da IA e Alertas vazados
-        clean_text = re.sub(r'^(Aqui est[áa]|Abaixo est[áa]|Segue|Com base nos).*?:?\s*(\n+|$)', '', secao.texto, flags=re.IGNORECASE|re.DOTALL)
-        clean_text = re.sub(r'\[\s*ALERTA.*?\]', '', clean_text, flags=re.IGNORECASE|re.DOTALL)
-        clean_text = re.sub(r'\[\s*Ref:.*?\]', '', clean_text, flags=re.IGNORECASE|re.DOTALL)
+        # Sanitização HOSTIL de LLM-speak, cabeçalhos de IA e Alertas vazados
+        # Corta frases típicas de co-autoria:
+        padroes_conversa = r'^(Aqui est[áa]|Abaixo est[áa]|Segue|Com base nos|Sugiro que|Podemos notar|Espero ter ajudado|Conforme solicitado).*?:?\s*(\n+|$)'
+        clean_text = re.sub(padroes_conversa, '', secao.texto, flags=re.IGNORECASE|re.DOTALL)
+        # Limpa colchetes de sistema
+        clean_text = re.sub(r'\[\s*(ALERTA|Ref).*?\]', '', clean_text, flags=re.IGNORECASE|re.DOTALL)
+        # Limpa Markdown headings brutas (#)
+        clean_text = re.sub(r'#{1,6}\s+', '', clean_text)
         clean_text = clean_text.strip()
 
         resultados.append(PolishResult(
