@@ -103,11 +103,11 @@ def categorize_knowledge_base(texto_fatos: str, api_key: str, status_callback: O
     teoria, biografia, legislação e metodologia.
     """
     modelo_json = {
-        "contexto_global": [],
-        "legislacao": [],
-        "biografia_pesquisador": [],
-        "referencial_teorico": [],
-        "metodologia_e_instrumentos": []
+        "contexto_global": "",
+        "legislacao": "",
+        "biografia_pesquisador": "",
+        "referencial_teorico": "",
+        "metodologia_e_instrumentos": ""
     }
     
     if not api_key or not texto_fatos.strip():
