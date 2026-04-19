@@ -12,12 +12,14 @@ import json
 import sys
 
 import config
-from modules import ingestor, comprehension, generator, polisher, exporter, persistence
 import hashlib
+
+import modules.persistence as persistence
 
 # Inicializa diretórios
 persistence.ensure_dir()
-from modules.ingestor import ingest_document
+
+from modules.ingestor import ingest_document, IngestorResult
 from modules.comprehension import comprehend
 from modules.generator import generate
 from modules.polisher import polish
