@@ -3,16 +3,7 @@ modules/generator.py — Módulo 3: Pipeline de Geração Agêntica
 Escriba v2.0
 
 ESTADO ATUAL: Funcional — geração real via API Maritaca (sabiazinho-4).
-ROADMAP: Implementar Chain-of-Verification (CoVe) completo:
-         1. Draft — gera seção
-         2. Verify — gera perguntas de verificação internas
-         3. Execute — consulta material-fonte para responder perguntas
-         4. Refine — reescreve apenas com fatos confirmados
-
-Responsabilidades:
-- Receber ComprehensionResult + template de seção
-- Chamar a API Maritaca com system prompt de fidelidade
-- Retornar texto gerado com referências de origem
+ROADMAP: Implementar Chain-of-Verification (CoVe) completo
 """
 
 import json
@@ -36,51 +27,20 @@ class GeneratorResult:
         self.cove_ativo = cove_ativo
 
 
-def _build_system_prompt(texto_fatos: str, texto_modelo: str, idioma: str, tema: str, incluir_markers: bool = False) -> str:
+def _build_system_prompt() -> str:
     """
-    System prompt com instrução de fidelidade máxima ao material-fonte.
-    Baseado na estratégia Anti-Alucinação do Blueprint Escriba v6.0.
+    TRAVA MESTRA — Escriba v7.0
+    Instruções de comportamento rigoroso para escrita de teses de Doutorado.
     """
-    prompt = (
-        "Você é o Escriba — um compilador rígido de design educacional e conteúdo acadêmico formal.\n"
-        "REGRA DE INFERÊNCIA ZERO: É peremptoriamente proibido atuar como coautor. É estritamente proibido inferir causas ou correlacionar marcos temporais, políticos ou históricos que não estejam expressos no payload. Você atua APENAS como COMPILADOR.\n\n"
-        f"Idioma de saída: {idioma}.\n"
-        f"Tema geral sugerido: {tema}.\n\n"
+    return (
+        "Você é um assistente acadêmico rigoroso auxiliando na escrita de uma tese de Doutorado em Educação.\n\n"
+        "**REGRAS INQUEBRÁVEIS:**\n"
+        "1. **Voz e Persona:** Escreva na primeira pessoa do singular com tom acadêmico reflexivo (ex: 'compreendo', 'analiso'). "
+        "É ESTRITAMENTE PROIBIDO inventar cargos biográficos (ex: 'como supervisor'), anedotas, metáforas poéticas ou falas de terceiros.\n"
+        "2. **Verbatim (Citação Exata):** Toda afirmação extraída diretamente de autores ou leis deve ser citada no corpo do texto utilizando aspas duplas de forma literal.\n"
+        "3. **Inferência Zero:** NUNCA adicione marcos históricos, contextos políticos não especificados ou conclusões lógicas que extrapolem os dados fornecidos.\n"
+        "4. **Isolamento de Escopo:** Concentre-se EXCLUSIVAMENTE em desenvolver os dados que estão no prompt atual. NUNCA antecipe metodologias ou tópicos futuros."
     )
-    
-    prompt += (
-        "DIRETRIZ ESTRUTURAL E VERBATIM (REGRAS DE CONTROLE):\n"
-        "- Regra 1: Toda afirmação extraída de documentos oficiais ou leis DEVE citar a fonte no mesmo período (ex: 'conforme o PNE 2026...').\n"
-        "- Regra 2: Nenhuma conclusão avaliativa (ex: 'a inclusão permanece incipiente') pode ser gerada sem ser imediatamente seguida da citação do autor ou dado do texto-fonte que a baseia.\n"
-        "- Para garantir que você não resuma conhecimentos de forma abstrata, cada parágrafo fático deve conter ao menos uma citação direta transcrita exatamente do material-fonte delimitada por aspas duplas.\n\n"
-    )
-    
-    if texto_modelo and texto_modelo.strip():
-        prompt += (
-            "DIRETRIZ DE ESTILO / PERSONA (TRAVA BIOGRÁFICA STRICTA):\n"
-            "1. Você deve escrever na primeira pessoa do singular (ex: 'analiso', 'compreendo') acompanhando o tom de voz do MATERIAL-FONTE DE MODELO (abaixo).\n"
-            "2. É ESTRITAMENTE PROIBIDO inventar cargos ('como supervisor'), experiências profissionais, anedotas, metáforas parnasianas ou simular falas de professores/terceiros.\n"
-            "3. Sua 'voz' deve se restringir exclusivamente a relatar ou transacionar os fatos e conceitos teóricos APRESENTADOS NO PAYLOAD. NUNCA assuma um Roleplay criativo.\n"
-            "---\n"
-            f"{texto_modelo[:10000]}\n"  
-            "---\n\n"
-        )
-    
-    prompt += (
-        "MATERIAL-FONTE DE FATOS E PESQUISA (A SUA ÚNICA BASE GERADORA DE CONTEÚDO):\\n"
-        "Use APENAS os dados teóricos, nomes e fatos contidos neste arquivo:\\n"
-        "---\\n"
-        f"{texto_fatos[:12000]}\\n"  # Limita para não estourar tokens
-        "---\\n\\n"
-    )
-
-    if incluir_markers:
-        prompt += (
-            "DIRETRIZ DE FLUXO E MÍDIA: Intercale os fatos ao longo de todo o texto suavemente. Sugira pontos de interatividade usando marcadores "
-            "como [ VÍDEO ], [ ÁUDIO ] ou [ TABELA ] apenas quando fizer sentido.\\n\\n"
-        )
-
-    return prompt
 
 
 def _chamar_api(client, modelo: str, system_prompt: str, user_prompt: str) -> str:
@@ -116,40 +76,19 @@ def generate(
 ) -> list[GeneratorResult]:
     """
     Ponto de entrada principal do Generator.
-
-    Args:
-        texto_fatos: Fatos extraídos da pesquisa.
-        texto_modelo: Material-fonte para base de tom e voz.
-        template: Dicionário do template JSON carregado.
-        secoes_selecionadas: Lista de IDs de seções a gerar.
-        tema: Tema geral informado pelo usuário.
-        idioma: Idioma de saída (ex: "Português").
-        api_key: Chave da API Maritaca.
-        modelo_geracao: Modelo base para geração (padrão: sabiazinho-4).
-        incluir_markers: Se deve incluir marcadores de mídia no prompt.
-        contexto_anterior: Texto já gerado em sessões/seções prévias para coerência.
-        status_callback: Função para mensagens de status na UI.
-        progress_callback: Função para atualizar progresso (recebe 0.0–1.0).
-
-    Returns:
-        Lista de GeneratorResult, uma por seção gerada.
     """
     if not _HAS_OPENAI:
         raise ImportError("openai não instalado. Execute: pip install openai")
 
     client = openai.OpenAI(api_key=api_key, base_url="https://chat.maritaca.ai/api")
     
-    # Verifica se o template possui um system prompt customizado
-    custom_system_prompt = template.get("system_prompt")
-    if custom_system_prompt:
-        system_prompt = custom_system_prompt
-    else:
-        system_prompt = _build_system_prompt(texto_fatos, texto_modelo, idioma, tema, incluir_markers=incluir_markers)
-    
     from .extractor import extract_required_entities_from_prompt, extract_mandatory_keys_from_context, categorize_knowledge_base
     
     # [Passo 1] Agente Classificador Global
     contexto_estruturado = categorize_knowledge_base(texto_fatos, api_key, status_callback)
+    
+    # Trava Mestra Injetada
+    system_prompt = template.get("system_prompt", _build_system_prompt())
     
     secoes_template = {s["id"]: s for s in template.get("secoes", [])}
     resultados = []
@@ -163,69 +102,60 @@ def generate(
         if status_callback:
             status_callback(f"⚙️ Gerando: {secao['titulo']} ({i+1}/{total})...")
 
-        skeleton_expansion = secao.get("skeleton_expansion", False)
-        base_prompt_padrao = secao.get("prompt", "")
+        sub_prompts = secao.get("sub_prompts", [secao.get("prompt", "")])
         texto_gerado_acc = []
         contexto_interno = contexto_anterior or ""
         
-        # [Passo 2] Dicionário de Roteamento Heurístico
-        titulo_lower = secao["titulo"].lower()
-        id_lower = secao["id"].lower()
-        if any(x in titulo_lower or x in id_lower for x in ["metod", "procedimento", "instrumento"]):
-            required_keys = ["metodologia_e_instrumentos"]
-        elif any(x in titulo_lower or x in id_lower for x in ["trajet", "apresent", "biograf", "historia"]):
-            required_keys = ["biografia_pesquisador", "contexto_global"]
-        elif any(x in titulo_lower or x in id_lower for x in ["revis", "teoric", "estado da arte", "desenvolvimento"]):
-            required_keys = ["referencial_teorico", "legislacao"]
-        else:
-            required_keys = ["contexto_global", "referencial_teorico"] # Fallback
-
-        # Ignorar chaves vazias retornadas pelo classificador
-        required_keys = [k for k in required_keys if k in contexto_estruturado and contexto_estruturado[k].strip()]
-        
-        # [Passo 3] Montagem Blindada do Payload (Hard Context Isolation)
-        # Se não tivermos fatos, colocamos fallback
-        if not required_keys:
-            payload_isolado = {"geral": texto_fatos}
-            keys_to_iterate = ["geral"]
-        else:
-            payload_isolado = {k: contexto_estruturado[k] for k in required_keys}
-            keys_to_iterate = required_keys
-
-        # [Passo 4] Loop de Expansão (Micro-Chunking) iterando sobre os conceitos filtrados
-        if status_callback:
-            status_callback(f"⚙️ Módulo {i+1}: Orquestração focada em {keys_to_iterate}...")
-
-        from .extractor import extract_required_entities_from_prompt, extract_mandatory_keys_from_context
-        
-        for idx_key, current_key in enumerate(keys_to_iterate):
-            bloco_fatos = payload_isolado[current_key]
-            if status_callback: 
-                status_callback(f"⚙️ Expandindo [{current_key}] ({idx_key+1}/{len(keys_to_iterate)})...")
-
-            # Construção do Micro-Prompt com isolamento de Payload
-            material_inj = ""
-            if not custom_system_prompt:
-                material_inj += f"\n\nMATERIAL DE ORIGEM (FATOS RECORTADOS EXCLUSIVAMENTE PARA '{current_key}'):\n\"\"\"\n{bloco_fatos}\n\"\"\"\n"
+        # [Passo 2, 3 e 4] Loop de Sub-Prompts fatiados com Micro-Chunking Hardcoded
+        for idx_sub, sub_item in enumerate(sub_prompts):
+            if isinstance(sub_item, dict):
+                comando_atual = sub_item.get("comando", "")
+                required_keys = sub_item.get("required_keys", [])
             else:
-                material_inj += f"\n\nMATERIAL DE ORIGEM (FATOS RECORTADOS EXCLUSIVAMENTE PARA '{current_key}'):\n\"\"\"\n{bloco_fatos}\n\"\"\"\n"
-                if texto_modelo:
-                     material_inj += f"\nMATERIAL DE REFERÊNCIA (ESTILO):\n\"\"\"\n{texto_modelo[:8000]}\n\"\"\""
+                comando_atual = sub_item
+                # Heurística de Fallback para chaves se o sub_prompt for apenas string
+                titulo_lower = secao["titulo"].lower()
+                id_lower = secao["id"].lower()
+                if any(x in titulo_lower for x in ["metod", "procedimento"]):
+                    required_keys = ["metodologia_e_instrumentos"]
+                elif any(x in titulo_lower for x in ["trajet", "apresent"]):
+                    required_keys = ["biografia_pesquisador", "contexto_global"]
+                elif any(x in titulo_lower for x in ["revis", "teoric", "desenvolvimento"]):
+                    required_keys = ["referencial_teorico", "legislacao"]
+                else:
+                    required_keys = ["contexto_global", "referencial_teorico"]
+
+            # [Passo 3] Montagem Blindada do Payload Isolado
+            present_keys = [k for k in required_keys if k in contexto_estruturado and contexto_estruturado[k].strip()]
+            if not present_keys:
+                # Se não mapeou chaves, envia um resumo teórico padrão
+                bloco_fatos = contexto_estruturado.get("referencial_teorico", texto_fatos[:5000])
+                current_labels = ["referencial_teorico (auto)"]
+            else:
+                bloco_fatos = "\n\n".join([contexto_estruturado[k] for k in present_keys])
+                current_labels = present_keys
+
+            if status_callback:
+                status_callback(f"⚙️ Expandindo Chamada {idx_sub+1}/{len(sub_prompts)} de '{secao['titulo']}' (Fatores: {current_labels})")
+
+            # Construção da Ingestão Material (Hard Isolation)
+            material_inj = f"\n\nMATERIAL-FONTE ISOLADO (DADOS PERMITIDOS PARA ESTA CHAMADA):\n\"\"\"\n{bloco_fatos}\n\"\"\"\n"
+            if texto_modelo:
+                material_inj += f"\nMATERIAL DE REFERÊNCIA (ESTILO):\n\"\"\"\n{texto_modelo[:8000]}\n\"\"\""
 
             user_prompt = (
-                f"Foco Isolado: Você deve focar ABSOLUTAMENTE TUDO em descrever e aprofundar sobre o contexto classificado como '{current_key}'. "
-                f"Escreva de 3 a 5 parágrafos DENSOS relacionando este conceito central com a seguinte intenção da seção:\n {base_prompt_padrao}\n\n"
-                "Proibido pular de assunto ou adiantar conceitos estruturais que não estejam neste payload isolado.\n"
+                f"TAREFA ESPECÍFICA:\n{comando_atual}\n\n"
+                "Lembre-se: Use APENAS o material-fonte isolado acima. Ignore metodologias se elas não estiverem listadas."
             )
 
             if contexto_interno:
                 user_prompt = (
-                    "CONTEXTO DE CONTINUIDADE (Acompanhe o fluxo do que você já escreveu logo acima):\n"
+                    "CONTEXTO DE CONTINUIDADE (O que você já escreveu e deve prosseguir):\n"
                     f"{contexto_interno}\n--- FIM DO CONTEXTO ---\n\n" + user_prompt
                 )
 
             # Extração de Chaves Anti-Omissão deste bloco
-            ent_prompt = extract_required_entities_from_prompt(base_prompt_padrao, api_key)
+            ent_prompt = extract_required_entities_from_prompt(comando_atual, api_key)
             ent_contexto = extract_mandatory_keys_from_context(bloco_fatos, api_key)
             entidades_obrig = list(set(ent_prompt + ent_contexto))
             
@@ -237,10 +167,12 @@ def generate(
                 texto_gerado_sub = _chamar_api(client, modelo_geracao, system_prompt, user_prompt + material_inj)
                 falhas = [e for e in entidades_obrig if str(e).lower() not in texto_gerado_sub.lower()]
                 if not falhas: break
+                
                 if status_callback and falhas:
-                    status_callback(f"⚠️ Omissão detectada em {current_key}. Reforçando chaves ({tentativas+1}/{max_retries}): {', '.join(falhas)[:30]}...")
+                    status_callback(f"⚠️ Omissão em {secao['titulo']} (Chamada {idx_sub+1}). Reforçando: {', '.join(falhas)[:30]}...")
+                
                 tentativas += 1
-                user_prompt += f"\n\n[ALERTA ANTI-OMISSÃO NO MICRO-CHUNKING]: Você DELETOU informações teóricas. Refaça ESSE bloco específico INCLUINDO obrigatoriamente estas chaves: {falhas}."
+                user_prompt += f"\n\n[ALERTA ANTI-OMISSÃO]: Você omitiu dados cruciais: {falhas}. Reescreva incluindo-os."
                 
             texto_gerado_acc.append(texto_gerado_sub)
             contexto_interno = texto_gerado_sub
@@ -252,13 +184,13 @@ def generate(
             secao_titulo=secao["titulo"],
             texto=texto_gerado,
             modelo_usado=modelo_geracao,
-            cove_ativo=False,  # ROADMAP: True quando CoVe for implementado
+            cove_ativo=False,
         ))
 
         if progress_callback:
             progress_callback((i + 1) / total)
 
     if status_callback:
-        status_callback(f"✅ Geração concluída: {len(resultados)} seções geradas com {modelo_geracao}.")
+        status_callback(f"✅ Geração concluída: {len(resultados)} seções geradas.")
 
     return resultados

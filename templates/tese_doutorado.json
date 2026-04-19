@@ -13,8 +13,18 @@
       "obrigatorio": true,
       "skeleton_expansion": true,
       "sub_prompts": [
-        "Escreva 3 parágrafos longos ESTRITAMENTE focados na apresentação histórica e macro-social do tema/problema principal utilizando os dados da base de Fatos. Mantenha o formato da primeira pessoa do singular se a sua diretiva base de formatação pedir.",
-        "Escreva de 2 a 3 parágrafos narrativos afunilando do contexto macro explicado anteriormente para a realidade e localidade geográfica exata tratada na pesquisa (ex: bioma, estado ou município). Aplique a Template Retórica: apresente as políticas públicas e demonstre a implicação fática da exclusão no local."
+        {
+          "comando": "Inicie o tópico '1.1 Apresentação do Tema'. Escreva de 3 a 4 parágrafos densos e acadêmicos desenvolvendo EXCLUSIVAMENTE o contexto de superexploração da natureza e a necessidade de uma educação não-bancária. \n- Aprofunde o conceito de modelo predatório de Loureiro e Layrargues (2013).\n- Relacione isso com a necessidade de uma educação dialógica e autotransformadora segundo Paulo Freire e Guimarães (2016).\n- Não mencione leis brasileiras ou o bioma do Cerrado ainda.",
+          "required_keys": ["referencial_teorico", "contexto_global"]
+        },
+        {
+          "comando": "Continuando o texto anterior de forma fluida, escreva mais 3 parágrafos aprofundando EXCLUSIVAMENTE como a legislação e as políticas públicas brasileiras tentam responder a essa crise ambiental.\n- Discuta o papel da BNCC na educação nacional.\n- Detalhe a Lei 14.926/2024 sobre mudanças climáticas nos currículos.\n- Integre os objetivos do Plano Nacional de Educação (PNE 2026) e o foco na sustentabilidade socioambiental.\n- Não mencione o estado de Goiás ou o Cerrado ainda.",
+          "required_keys": ["legislacao"]
+        },
+        {
+          "comando": "Para finalizar o tópico 1.1, escreva mais 3 a 4 parágrafos afunilando a discussão legal para a realidade concreta da EJA no estado de Goiás.\n- Desenvolva o contraste entre os avanços legais e o histórico de desestruturação política recente.\n- Insira e problematize os dados do IBGE sobre analfabetismo.\n- Discuta a gravidade da situação do bioma Cerrado (utilizando os dados do TerraClass Cerrado, 2018) e como isso afeta as populações locais que compõem a EJA.\n- Conclua a apresentação do tema justificando a necessidade desta pesquisa.",
+          "required_keys": ["contexto_global", "biografia_pesquisador"]
+        }
       ]
     },
     {
