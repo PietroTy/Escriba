@@ -509,7 +509,7 @@ if gerar_btn:
                 scope_key = "tudo" if escopo_memoria == "Tudo" else "ultima"
                 contexto_anterior = persistence.build_context(st.session_state["memoria_tese"], scope=scope_key)
 
-            generator_results = generator.generate(
+            generator_results = generate(
                 texto_fatos=texto_fatos,
                 texto_modelo=texto_modelo,
                 template=template_atual,
