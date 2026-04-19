@@ -96,44 +96,74 @@ def extract_required_entities_from_prompt(prompt_usuario: str, api_key: str) -> 
     except Exception:
         return []
 
-def filter_context_for_prompt(texto_fatos: str, base_prompt: str, api_key: str, status_callback: Optional[Callable] = None) -> str:
+def categorize_knowledge_base(texto_fatos: str, api_key: str, status_callback: Optional[Callable] = None) -> dict:
     """
-    NLP fatiando o Payload: Isola unicamente os parágrafos do `texto_fatos` que 
-    são estritamente pertinentes ao `base_prompt` atual.
-    Oculta o resto para evitar vazamento de memória e alucinação de escopo.
+    Passo 1: Agente Classificador (Pre-processing).
+    Lê o documento inteiro e o estrutura em um formato JSON isolando
+    teoria, biografia, legislação e metodologia.
     """
+    modelo_json = {
+        "contexto_global": [],
+        "legislacao": [],
+        "biografia_pesquisador": [],
+        "referencial_teorico": [],
+        "metodologia_e_instrumentos": []
+    }
+    
     if not api_key or not texto_fatos.strip():
-        return texto_fatos
+        return modelo_json
 
     if status_callback:
-        status_callback("🔍 Recortando contexto exato para o tópico atual...")
+        status_callback("🔍 Mapeando e Categorizando Fatos do Documento (Agente Classificador)...")
 
     try:
         client = openai.OpenAI(api_key=api_key, base_url="https://chat.maritaca.ai/api")
         p = (
-            "Você é um filtro de contexto documental impecável.\n"
-            "Abaixo você tem o MATERIAL-FONTE completo e a TAREFA ATUAL.\n"
-            "Sua missão é extrair do MATERIAL-FONTE APENAS os trechos, dados e parágrafos que são vitais para cumprir a TAREFA ATUAL.\n"
-            "Se a tarefa for sobre relato pessoal/trajetória, extraia apenas as partes biográficas.\n"
-            "Se a tarefa for sobre leis (PNE, etc.), extraia apenas os dados técnicos e teóricos.\n"
-            "Transcreva os trechos relevantes EXATAMENTE como estão na fonte (copiar e colar). Não presuma, não invente.\n"
-            "Se não houver nada pertinente no material-fonte, retorne VAZIO.\n\n"
-            f"[TAREFA ATUAL]:\n{base_prompt}\n\n"
-            f"[MATERIAL-FONTE]:\n{texto_fatos[:15000]}"
+            "Você é um Agente Classificador Estrutural de Dados de Pesquisa.\n"
+            "Sua missão é ler o documento de pesquisa fornecido e categorizar seus parágrafos em um JSON ESTRITO.\n"
+            "As chaves obrigatórias do JSON são:\n"
+            "1. \"contexto_global\"\n"
+            "2. \"legislacao\"\n"
+            "3. \"biografia_pesquisador\"\n"
+            "4. \"referencial_teorico\"\n"
+            "5. \"metodologia_e_instrumentos\"\n\n"
+            "Valores: Cada chave deve conter uma ARRAY de strings. Insira os parágrafos relevantes EXATAMENTE como estão na fonte (transcrição literal).\n"
+            "Se o documento não contiver informações para alguma categoria, deixe a array vazia [].\n"
+            "Responda APENAS com o JSON, sem nenhum outro tipo de texto.\n\n"
+            f"[DOCUMENTO DE PESQUISA]:\n{texto_fatos[:18000]}"
         )
         response = client.chat.completions.create(
             model="sabiazinho-4",
             messages=[{"role": "user", "content": p}],
             temperature=0.0,
             max_tokens=4000,
+            response_format={"type": "json_object"}
         )
-        # Se devolveu vazio ou algo irrelevante
+        
         filtrado = response.choices[0].message.content.strip()
-        if len(filtrado) < 20: 
-            return texto_fatos[:3000] # Fallback de segurança se ele acidentalmente deletar tudo
-        return filtrado
-    except Exception:
-        return texto_fatos
+        filtrado = filtrado.replace('```json', '').replace('```', '').strip()
+        dados_categorizados = json.loads(filtrado)
+        
+        # Garante que todas as chaves existam e sejam strings agregadas para uso posterior
+        for key in modelo_json.keys():
+            if key in dados_categorizados:
+                # Se for lista de strings, junta em um único texto para facilitar. Se já for string, deixa.
+                valor = dados_categorizados[key]
+                if isinstance(valor, list):
+                    modelo_json[key] = "\n\n".join(str(item) for item in valor)
+                else:
+                    modelo_json[key] = str(valor)
+            else:
+                modelo_json[key] = ""
+                
+        return modelo_json
+    except Exception as e:
+        if status_callback:
+            status_callback(f"⚠️ Alerta: Falha no Agente Classificador ({e}). Retornando contexto bruto.")
+        
+        # Fallback: se falhar, enfia o texto inteiro na chave teórica pra não estourar o sistema
+        modelo_json["referencial_teorico"] = texto_fatos
+        return modelo_json
 
 def extract_mandatory_keys_from_context(contexto_filtrado: str, api_key: str) -> List[str]:
     """

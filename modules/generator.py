@@ -146,7 +146,10 @@ def generate(
     else:
         system_prompt = _build_system_prompt(texto_fatos, texto_modelo, idioma, tema, incluir_markers=incluir_markers)
     
-    from .extractor import extract_required_entities_from_prompt, filter_context_for_prompt, extract_mandatory_keys_from_context
+    from .extractor import extract_required_entities_from_prompt, extract_mandatory_keys_from_context, categorize_knowledge_base
+    
+    # [Passo 1] Agente Classificador Global
+    contexto_estruturado = categorize_knowledge_base(texto_fatos, api_key, status_callback)
     
     secoes_template = {s["id"]: s for s in template.get("secoes", [])}
     resultados = []
@@ -161,103 +164,86 @@ def generate(
             status_callback(f"⚙️ Gerando: {secao['titulo']} ({i+1}/{total})...")
 
         skeleton_expansion = secao.get("skeleton_expansion", False)
-        sub_prompts = secao.get("sub_prompts", [secao.get("prompt", "")])
+        base_prompt_padrao = secao.get("prompt", "")
         texto_gerado_acc = []
         contexto_interno = contexto_anterior or ""
         
-        for idx_sub, base_prompt in enumerate(sub_prompts):
-            if not base_prompt: continue
-            
-            # --- CHUNKING SEMÂNTICO (Oculta trajetórias pessoais no micro ou macro) ---
-            texto_fatos_filtrado = filter_context_for_prompt(texto_fatos, base_prompt, api_key, status_callback)
-            
-            # NLP Extractor (NER - Obrigando termos)
-            ent_prompt = extract_required_entities_from_prompt(base_prompt, api_key)
-            ent_contexto = extract_mandatory_keys_from_context(texto_fatos_filtrado, api_key)
-            entidades_obrig = list(set(ent_prompt + ent_contexto)) # União única das travas
-            
-            # Preparação de injestão comum usando o Filtered Context
+        # [Passo 2] Dicionário de Roteamento Heurístico
+        titulo_lower = secao["titulo"].lower()
+        id_lower = secao["id"].lower()
+        if any(x in titulo_lower or x in id_lower for x in ["metod", "procedimento", "instrumento"]):
+            required_keys = ["metodologia_e_instrumentos"]
+        elif any(x in titulo_lower or x in id_lower for x in ["trajet", "apresent", "biograf", "historia"]):
+            required_keys = ["biografia_pesquisador", "contexto_global"]
+        elif any(x in titulo_lower or x in id_lower for x in ["revis", "teoric", "estado da arte", "desenvolvimento"]):
+            required_keys = ["referencial_teorico", "legislacao"]
+        else:
+            required_keys = ["contexto_global", "referencial_teorico"] # Fallback
+
+        # Ignorar chaves vazias retornadas pelo classificador
+        required_keys = [k for k in required_keys if k in contexto_estruturado and contexto_estruturado[k].strip()]
+        
+        # [Passo 3] Montagem Blindada do Payload (Hard Context Isolation)
+        # Se não tivermos fatos, colocamos fallback
+        if not required_keys:
+            payload_isolado = {"geral": texto_fatos}
+            keys_to_iterate = ["geral"]
+        else:
+            payload_isolado = {k: contexto_estruturado[k] for k in required_keys}
+            keys_to_iterate = required_keys
+
+        # [Passo 4] Loop de Expansão (Micro-Chunking) iterando sobre os conceitos filtrados
+        if status_callback:
+            status_callback(f"⚙️ Módulo {i+1}: Orquestração focada em {keys_to_iterate}...")
+
+        from .extractor import extract_required_entities_from_prompt, extract_mandatory_keys_from_context
+        
+        for idx_key, current_key in enumerate(keys_to_iterate):
+            bloco_fatos = payload_isolado[current_key]
+            if status_callback: 
+                status_callback(f"⚙️ Expandindo [{current_key}] ({idx_key+1}/{len(keys_to_iterate)})...")
+
+            # Construção do Micro-Prompt com isolamento de Payload
             material_inj = ""
             if not custom_system_prompt:
-                # Substituímos as tags dinâmicas no prompt aqui, pois _build override o original
-                material_inj += f"\n\nMATERIAL DE ORIGEM (FATOS RECORTADOS PARA ESTA SEÇÃO):\n\"\"\"\n{texto_fatos_filtrado}\n\"\"\"\n"
+                material_inj += f"\n\nMATERIAL DE ORIGEM (FATOS RECORTADOS EXCLUSIVAMENTE PARA '{current_key}'):\n\"\"\"\n{bloco_fatos}\n\"\"\"\n"
             else:
-                material_inj += f"\n\nMATERIAL DE ORIGEM (FATOS RECORTADOS PARA ESTA SEÇÃO):\n\"\"\"\n{texto_fatos_filtrado}\n\"\"\"\n"
+                material_inj += f"\n\nMATERIAL DE ORIGEM (FATOS RECORTADOS EXCLUSIVAMENTE PARA '{current_key}'):\n\"\"\"\n{bloco_fatos}\n\"\"\"\n"
                 if texto_modelo:
                      material_inj += f"\nMATERIAL DE REFERÊNCIA (ESTILO):\n\"\"\"\n{texto_modelo[:8000]}\n\"\"\""
-            
-            # --- FLUXO SKELETON EXPANSION ---
-            if skeleton_expansion:
-                if status_callback: status_callback(f"⚙️ Mapeando Esqueleto do Tópico {i+1}...")
-                
-                req_esqueleto = (
-                    "GERAÇÃO DE ESQUELETO MESTRE (DRAFT):\n"
-                    "Crie um índice fático enumerado de 3 a 5 tópicos principais que você abordaria para resolver a seguinte instrução.\n"
-                    "Responda APENAS com os bullets (iniciando com '- '), não escreva o texto final.\n\n"
-                    f"INSTRUÇÃO:\n{base_prompt}"
+
+            user_prompt = (
+                f"Foco Isolado: Você deve focar ABSOLUTAMENTE TUDO em descrever e aprofundar sobre o contexto classificado como '{current_key}'. "
+                f"Escreva de 3 a 5 parágrafos DENSOS relacionando este conceito central com a seguinte intenção da seção:\n {base_prompt_padrao}\n\n"
+                "Proibido pular de assunto ou adiantar conceitos estruturais que não estejam neste payload isolado.\n"
+            )
+
+            if contexto_interno:
+                user_prompt = (
+                    "CONTEXTO DE CONTINUIDADE (Acompanhe o fluxo do que você já escreveu logo acima):\n"
+                    f"{contexto_interno}\n--- FIM DO CONTEXTO ---\n\n" + user_prompt
                 )
-                
-                esqueleto_bruto = _chamar_api(client, modelo_geracao, system_prompt, req_esqueleto + material_inj)
-                linhas_esqueleto = [l.strip() for l in esqueleto_bruto.split('\n') if l.strip().startswith('-')]
-                if not linhas_esqueleto:
-                    linhas_esqueleto = [l.strip() for l in esqueleto_bruto.split('\n') if len(l.strip()) > 10][:4]
-                
-                for idx_linha, linha_index in enumerate(linhas_esqueleto):
-                    if status_callback: status_callback(f"⚙️ Deep Render ({idx_linha+1}/{len(linhas_esqueleto)}): {linha_index[:30]}...")
-                    
-                    user_prompt = (
-                        f"Você está expandindo UMA ÚNICA LINHA de um índice maior. Escreva de 3 a 5 parágrafos DENSOS "
-                        f"abortando OBRIGATÓRIA E EXCLUSIVAMENTE o seguinte tópico: '{linha_index}'.\n"
-                        "Proibido iniciar conclusões finais ou pular de assunto.\n\n"
-                        f"Contexto Macro da Seção: {base_prompt}"
-                    )
-                    
-                    if contexto_interno:
-                        user_prompt = (
-                            "CONTEXTO DE CONTINUIDADE (Acompanhe o fluxo do que você já escreveu logo acima):\n"
-                            f"{contexto_interno}\n--- FIM DO CONTEXTO ---\n\n" + user_prompt
-                        )
-                    
-                    # Retry Anti-Omissão
-                    tentativas = 0
-                    max_retries = 2
-                    texto_gerado_sub = ""
-                    while tentativas <= max_retries:
-                        texto_gerado_sub = _chamar_api(client, modelo_geracao, system_prompt, user_prompt + material_inj)
-                        falhas = [e for e in entidades_obrig if str(e).lower() not in texto_gerado_sub.lower()]
-                        if not falhas: break
-                        if status_callback and falhas:
-                            status_callback(f"⚠️ Omissão detectada. Reforçando chaves ({tentativas+1}/{max_retries}): {', '.join(falhas)[:30]}...")
-                        tentativas += 1
-                        user_prompt += f"\n\n[ALERTA ANTI-OMISSÃO]: Você DELETOU informações vitais. Refaça o texto INCLUINDO e ABORDANDO essas entidades ou números: {falhas}."
-                        
-                    texto_gerado_acc.append(texto_gerado_sub)
-                    contexto_interno = texto_gerado_sub
+
+            # Extração de Chaves Anti-Omissão deste bloco
+            ent_prompt = extract_required_entities_from_prompt(base_prompt_padrao, api_key)
+            ent_contexto = extract_mandatory_keys_from_context(bloco_fatos, api_key)
+            entidades_obrig = list(set(ent_prompt + ent_contexto))
             
-            # --- FLUXO NORMAL OU COMUM MICRO-CHUNKING ---
-            else:
-                if status_callback: status_callback(f"⚙️ Gerando: {secao['titulo']} (Pedaço {idx_sub+1}/{len(sub_prompts)})...")
-                user_prompt = base_prompt
-                if contexto_interno:
-                    user_prompt = (
-                        "CONTEXTO DE CONTINUIDADE (Acompanhe o fluxo do que você já escreveu logo acima):\n"
-                        f"{contexto_interno}\n--- FIM DO CONTEXTO ---\n\n" + user_prompt
-                    )
+            # Retry Anti-Omissão e [Passo 5] Sanitização progressiva
+            tentativas = 0
+            max_retries = 2
+            texto_gerado_sub = ""
+            while tentativas <= max_retries:
+                texto_gerado_sub = _chamar_api(client, modelo_geracao, system_prompt, user_prompt + material_inj)
+                falhas = [e for e in entidades_obrig if str(e).lower() not in texto_gerado_sub.lower()]
+                if not falhas: break
+                if status_callback and falhas:
+                    status_callback(f"⚠️ Omissão detectada em {current_key}. Reforçando chaves ({tentativas+1}/{max_retries}): {', '.join(falhas)[:30]}...")
+                tentativas += 1
+                user_prompt += f"\n\n[ALERTA ANTI-OMISSÃO NO MICRO-CHUNKING]: Você DELETOU informações teóricas. Refaça ESSE bloco específico INCLUINDO obrigatoriamente estas chaves: {falhas}."
                 
-                tentativas = 0
-                max_retries = 2
-                texto_gerado_sub = ""
-                while tentativas <= max_retries:
-                    texto_gerado_sub = _chamar_api(client, modelo_geracao, system_prompt, user_prompt + material_inj)
-                    falhas = [e for e in entidades_obrig if str(e).lower() not in texto_gerado_sub.lower()]
-                    if not falhas: break
-                    if status_callback and falhas:
-                            status_callback(f"⚠️ Omissão detectada. Reforçando chaves ({tentativas+1}/{max_retries}): {', '.join(falhas)[:30]}...")
-                    tentativas += 1
-                    user_prompt += f"\n\n[ALERTA ANTI-OMISSÃO]: Você DELETOU informações vitais. Refaça o texto INCLUINDO e ABORDANDO estas entidades ou números: {falhas}."
-                    
-                texto_gerado_acc.append(texto_gerado_sub)
-                contexto_interno = texto_gerado_sub
+            texto_gerado_acc.append(texto_gerado_sub)
+            contexto_interno = texto_gerado_sub
 
         texto_gerado = "\n\n".join(texto_gerado_acc)
 
